@@ -6,10 +6,10 @@ from django.urls import reverse_lazy
 from home import views as home_views
 
 urlpatterns = [
-    path('', home_views.index, name='home-root'),
+    path('', home_views.index, name='home'),
     path('home/', include('home.urls')),
     path('login', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
-    path('logout', auth_views.LogoutView.as_view(next_page='home-root'), name='logout'),
+    path('logout', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path(
         'password-reset',
         auth_views.PasswordResetView.as_view(
@@ -40,9 +40,13 @@ urlpatterns = [
     path('register', home_views.register, name='register'),
     path('profile', home_views.profile, name='profile'),
     path('dashboard', home_views.dashboard, name='dashboard'),
+    path('calculators', home_views.calculator_directory, name='calculator-directory'),
     path('categories', home_views.categories, name='categories'),
     path('tags', home_views.tags, name='tags'),
     path('add', home_views.add_calculator, name='add-calculator'),
+    path('admin/calculators', home_views.calculator_list, name='calculator-list'),
+    path('calculator/<int:pk>/update', home_views.update_calculator, name='update-calculator'),
+    path('calculator/<int:pk>/delete', home_views.delete_calculator, name='delete-calculator'),
     path('admin/users', home_views.admin_users, name='admin-users'),
     path('terms-of-use', home_views.terms_of_use, name='terms-of-use'),
     path('privacy-policy', home_views.privacy_policy, name='privacy-policy'),

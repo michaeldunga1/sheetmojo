@@ -1,8 +1,13 @@
 from django import forms
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import redirect, render
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .forms import CalculatorForm
+from .models import Calculator
 
 
 APP_LINKS = [
@@ -58,7 +63,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect("home-root")
+            return redirect("home")
     else:
         form = UserCreationForm()
     return render(request, "auth/register.html", {"form": form})
@@ -96,36 +101,163 @@ def dashboard(request):
     )
 
 
-def categories(request):
+def calculator_directory(request):
+    q = request.GET.get("q", "").strip()
+    domain = request.GET.get("domain", "").strip()
+    tag = request.GET.get("tag", "").strip()
+
+    calculators = Calculator.objects.all()
+    if q:
+        from django.db.models import Q
+        calculators = calculators.filter(
+            Q(calculator_name__icontains=q) |
+            Q(tags__icontains=q) |
+            Q(description__icontains=q)
+        )
+    if domain:
+        calculators = calculators.filter(domain__iexact=domain)
+    if tag:
+        calculators = calculators.filter(tags__icontains=tag)
+
+    calculators = calculators.order_by("domain", "calculator_name")
+
     return render(
         request,
-        "home/simple_page.html",
+        "home/calculator_directory.html",
         {
-            "title": "Categories",
-            "message": "Category browsing will be available here.",
+            "calculators": calculators,
+            "q": q,
+            "active_domain": domain,
+            "active_tag": tag,
+            "total": calculators.count(),
         },
     )
 
 
-def tags(request):
+def categories(request):
+    from django.db.models import Count
+    domain_counts = {
+        row["domain"]: row["n"]
+        for row in Calculator.objects.values("domain").annotate(n=Count("id"))
+    }
+    category_list = [
+        {
+            "name": app["name"],
+            "href": app["href"],
+            "description": app["description"],
+            "count": domain_counts.get(app["name"], 0),
+        }
+        for app in APP_LINKS
+    ]
     return render(
         request,
-        "home/simple_page.html",
-        {
-            "title": "Tags",
-            "message": "Tag browsing will be available here.",
-        },
+        "home/categories.html",
+        {"categories": category_list},
+    )
+
+
+def tags(request):
+    from collections import Counter
+    all_tags = Calculator.objects.values_list("tags", flat=True)
+    counter = Counter()
+    for tag_string in all_tags:
+        for t in tag_string.split(","):
+            t = t.strip()
+            if t:
+                counter[t] += 1
+    tag_list = sorted(counter.items(), key=lambda x: (-x[1], x[0]))
+    return render(
+        request,
+        "home/tags.html",
+        {"tags": tag_list},
     )
 
 
 @login_required
 def add_calculator(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = CalculatorForm(request.POST)
+        if form.is_valid():
+            calculator = form.save(commit=False)
+            calculator.created_by = request.user
+            calculator.save()
+            messages.success(request, "Calculator created successfully.")
+            return redirect("update-calculator", pk=calculator.pk)
+    else:
+        form = CalculatorForm()
+
     return render(
         request,
-        "home/simple_page.html",
+        "home/calculator_form.html",
         {
             "title": "Add Calculator",
-            "message": "Calculator submission will be available here.",
+            "submit_label": "Create Calculator",
+            "form": form,
+        },
+    )
+
+
+@login_required
+def update_calculator(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    calculator = get_object_or_404(Calculator, pk=pk)
+    if request.method == "POST":
+        form = CalculatorForm(request.POST, instance=calculator)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Calculator updated successfully.")
+            return redirect("update-calculator", pk=calculator.pk)
+    else:
+        form = CalculatorForm(instance=calculator)
+
+    return render(
+        request,
+        "home/calculator_form.html",
+        {
+            "title": "Update Calculator",
+            "submit_label": "Update Calculator",
+            "form": form,
+            "calculator": calculator,
+        },
+    )
+
+
+@login_required
+def calculator_list(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    calculators = Calculator.objects.select_related("created_by").all()
+    return render(
+        request,
+        "home/calculator_list.html",
+        {
+            "calculators": calculators,
+        },
+    )
+
+
+@login_required
+def delete_calculator(request, pk):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    calculator = get_object_or_404(Calculator, pk=pk)
+    if request.method == "POST":
+        calculator.delete()
+        messages.success(request, "Calculator deleted successfully.")
+        return redirect("calculator-list")
+
+    return render(
+        request,
+        "home/calculator_confirm_delete.html",
+        {
+            "calculator": calculator,
         },
     )
 
