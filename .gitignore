@@ -34,6 +34,7 @@ dist/
 # Environment and local settings
 .env
 .env.*
+!.env.example
 *.local
 
 # Editor and OS files
