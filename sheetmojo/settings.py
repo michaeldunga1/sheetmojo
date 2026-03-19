@@ -1,4 +1,4 @@
-"""Django settings for py_algos project."""
+"""Django settings for sheetmojo project."""
 
 import importlib.util
 import os
@@ -86,7 +86,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'py_algos.urls'
+ROOT_URLCONF = 'sheetmojo.urls'
 
 TEMPLATES = [
     {
@@ -104,7 +104,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'py_algos.wsgi.application'
+WSGI_APPLICATION = 'sheetmojo.wsgi.application'
 
 
 # Database

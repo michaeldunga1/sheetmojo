@@ -1,5 +1,5 @@
 """
-ASGI config for py_algos project.
+ASGI config for sheetmojo project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'py_algos.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sheetmojo.settings')
 
 application = get_asgi_application()
