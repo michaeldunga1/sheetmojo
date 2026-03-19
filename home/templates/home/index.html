@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-6xl">
+  <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+    <div class="bg-gradient-to-br from-sky-100 via-white to-emerald-100 px-6 py-10 sm:px-8">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-2xl">
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700">Home</p>
+          <h1 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Explore Calculator Apps</h1>
+          <p class="mt-4 text-base text-slate-600 sm:text-lg">
+            Browse every subject area from one place. Switch between a visual grid and a compact list depending on how you want to navigate.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <a
+            href="/?view=grid"
+            class="rounded-full border px-4 py-2 text-sm font-medium {% if view_mode == 'grid' %}border-sky-600 bg-sky-600 text-white{% else %}border-slate-300 bg-white text-slate-700{% endif %}"
+          >
+            Grid View
+          </a>
+          <a
+            href="/?view=list"
+            class="rounded-full border px-4 py-2 text-sm font-medium {% if view_mode == 'list' %}border-slate-900 bg-slate-900 text-white{% else %}border-slate-300 bg-white text-slate-700{% endif %}"
+          >
+            List View
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-6 py-6 sm:px-8 sm:py-8">
+      {% if view_mode == 'list' %}
+        <div class="space-y-4">
+          {% for app in apps %}
+            <a href="{{ app.href }}" class="flex flex-col gap-3 rounded-2xl border p-5 transition sm:flex-row sm:items-center sm:justify-between {% if app.name == 'Mechanics' %}border-rose-300 bg-gradient-to-br from-rose-50 via-white to-orange-50 hover:border-rose-400 hover:shadow-sm{% else %}border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-sky-50{% endif %}">
+              <div>
+                <h2 class="text-lg font-semibold text-slate-900">
+                  {% if app.name == 'Mechanics' %}
+                    <span class="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-rose-700 align-middle" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6.3 6.3a1 1 0 1 0 1.4 1.4l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.6-.6-.6-2.6z"/>
+                      </svg>
+                    </span>
+                  {% endif %}
+                  {{ app.name }}
+                </h2>
+                <p class="mt-1 text-sm text-slate-600">{{ app.description }}</p>
+              </div>
+              <span class="inline-flex rounded-full border bg-white px-4 py-2 text-sm font-medium {% if app.name == 'Mechanics' %}border-rose-300 text-rose-700{% else %}border-slate-300 text-slate-700{% endif %}">Open App</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {% for app in apps %}
+            <a href="{{ app.href }}" class="group rounded-2xl border p-5 transition hover:-translate-y-0.5 {% if app.name == 'Mechanics' %}border-rose-300 bg-gradient-to-br from-rose-50 via-white to-orange-50 hover:border-rose-400 hover:shadow-md{% else %}border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-white hover:shadow-md{% endif %}">
+              <div class="flex items-start justify-between gap-4">
+                <h2 class="text-lg font-semibold text-slate-900">
+                  {% if app.name == 'Mechanics' %}
+                    <span class="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-rose-700 align-middle" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6.3 6.3a1 1 0 1 0 1.4 1.4l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.6-.6-.6-2.6z"/>
+                      </svg>
+                    </span>
+                  {% endif %}
+                  {{ app.name }}
+                </h2>
+                <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide {% if app.name == 'Mechanics' %}text-rose-700{% else %}text-slate-500{% endif %}">{% if app.name == 'Mechanics' %}Mechanics{% else %}App{% endif %}</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">{{ app.description }}</p>
+              <div class="mt-5 text-sm font-medium {% if app.name == 'Mechanics' %}text-rose-700 group-hover:text-rose-800{% else %}text-emerald-700 group-hover:text-emerald-800{% endif %}">Open {{ app.name }}</div>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

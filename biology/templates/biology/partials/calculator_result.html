@@ -1,0 +1,21 @@
+{% if form.non_field_errors %}
+  <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert" aria-live="assertive">
+    {{ form.non_field_errors|join:', ' }}
+  </div>
+{% elif result %}
+  <div class="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-5" aria-label="Calculation result">
+    <h3 class="sr-only">Step-by-step</h3>
+    <div class="space-y-2 text-sm text-slate-700">
+      {% for label, value in result.steps %}
+        <div class="rounded-xl bg-white/70 px-3 py-2">
+          <span class="font-semibold text-slate-900">{{ label }}:</span>
+          <span>{{ value }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600" aria-label="Calculation hint">
+    Enter values and submit the form to see the result here.
+  </div>
+{% endif %}

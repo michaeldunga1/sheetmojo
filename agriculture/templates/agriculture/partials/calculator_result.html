@@ -1,0 +1,21 @@
+{% if form.non_field_errors %}
+  <div class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800" role="alert" aria-live="assertive">
+    {{ form.non_field_errors|striptags }}
+  </div>
+{% elif result %}
+  <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4" aria-label="Calculation result">
+    <h3 class="text-sm font-semibold">Step-by-step</h3>
+    <div class="mt-2 space-y-2 text-sm" role="list">
+      {% for label, value in result.steps %}
+        <div role="listitem">
+          <span class="font-medium">{{ label }}:</span>
+          <span class="ml-1 text-slate-700">{{ value }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600" aria-label="Calculation hint">
+    Enter values and click <strong>Compute</strong> to see the derivation steps.
+  </div>
+{% endif %}

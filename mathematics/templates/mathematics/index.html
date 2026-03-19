@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Mathematics Calculators{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+{% endblock %}
+{% block content %}
+<section class="max-w-5xl mx-auto" x-data="{openHelp:false, search:'', activeFormula:'{{ formula_slug }}'}">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold">Mathematics Calculators</h1>
+      <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2" @click="openHelp = !openHelp">
+        Toggle Help
+      </button>
+    </div>
+
+    <p class="mt-2 text-sm text-slate-600">
+      Choose a formula, enter parameters, and compute with step-by-step derivation.
+    </p>
+
+    <div x-show="openHelp" x-transition class="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900">
+      Covers number theory, combinatorics, probability, series, and discrete mathematics. The result panel shows the substituted expression and the final answer.
+    </div>
+
+    <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
+      {% for group in formula_groups %}
+        <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">{{ group.title }}</span>
+      {% endfor %}
+    </div>
+
+    <label for="formula-search" class="mt-6 block text-sm font-medium">Search Formulas</label>
+    <input
+      id="formula-search"
+      type="search"
+      x-model="search"
+      class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+      aria-label="Search formulas"
+      placeholder="Search by formula or topic"
+      autocomplete="off"
+    >
+
+    <div class="mt-5 space-y-5">
+      {% for group in formula_groups %}
+        <div
+          class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+          x-show="'{{ group.title|lower|escapejs }}'.includes(search.toLowerCase()) || Array.from($el.querySelectorAll('[data-formula-title]')).some(function (node) { return node.dataset.formulaTitle.includes(search.toLowerCase()); })"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-600">{{ group.title }}</h2>
+            <span class="text-xs text-slate-500">{{ group.options|length }} calculators</span>
+          </div>
+
+          <div class="mt-3 grid gap-2 md:grid-cols-2">
+            {% for item in group.options %}
+              <button
+                type="button"
+                class="rounded-xl border px-4 py-3 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                :class="activeFormula === '{{ item.slug }}' ? 'border-violet-600 bg-violet-50 text-violet-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'"
+                :aria-pressed="activeFormula === '{{ item.slug }}'"
+                x-show="'{{ item.title|lower|escapejs }}'.includes(search.toLowerCase()) || '{{ group.title|lower|escapejs }}'.includes(search.toLowerCase())"
+                @click="activeFormula = '{{ item.slug }}'"
+                hx-get="{% url 'mathematics:load-form' %}?formula={{ item.slug }}"
+                hx-target="#calculator-shell"
+                hx-swap="innerHTML"
+                data-formula-title="{{ item.title|lower }}"
+              >
+                <span class="block font-medium">{{ item.title }}</span>
+                <span class="mt-1 block text-xs text-slate-500">{{ item.description }}</span>
+                <span class="mt-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ group.title }}</span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div id="calculator-shell" class="mt-6" role="region" aria-live="polite" aria-label="Calculator panel">
+      {% include "mathematics/partials/calculator_form.html" %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script>
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    const scope = evt.target;
+    scope.querySelectorAll('[data-katex]').forEach(function (el) {
+      if (window.katex) {
+        katex.render(el.dataset.katex, el, { throwOnError: false, displayMode: true });
+      }
+    });
+  });
+  window.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-katex]').forEach(function (el) {
+      if (window.katex) {
+        katex.render(el.dataset.katex, el, { throwOnError: false, displayMode: true });
+      }
+    });
+  });
+</script>
+{% endblock %}
