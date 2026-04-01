@@ -1,0 +1,4 @@
+<div class="view-toggle right-align">
+    <a href="?view=list{% if page_obj %}&page={{ page_obj.number }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}" class="btn-flat {% if request.GET.view != 'grid' %}blue-text text-darken-2{% endif %}">List View</a>
+    <a href="?view=grid{% if page_obj %}&page={{ page_obj.number }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}" class="btn-flat {% if request.GET.view == 'grid' %}blue-text text-darken-2{% endif %}">Grid View</a>
+</div>

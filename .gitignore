@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+*.mo
+
+# VSCode
+.vscode/
+
+# Environments
+.env
+.venv/
+sheetmojo-venv/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Migrations
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# Other
+*.swp
+*.swo
+.idea/
+*.bak
+
+# Git
+.git/

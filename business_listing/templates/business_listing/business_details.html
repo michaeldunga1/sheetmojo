@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ business.business_name }}{% endblock %}
+
+{% block content %}
+<div class="detail-shell">
+    <div class="card detail-panel">
+        <div class="card-content">
+            <h3 class="detail-title">{{ business.business_name }}</h3>
+            <p class="support-copy">{{ business.category }}{% if business.short_description %} · {{ business.short_description }}{% endif %}</p>
+            <div class="detail-panel__meta">
+                <p><strong>Category:</strong> <a href="{% url 'businesses_by_category' business.category %}">{{ business.category }}</a></p>
+                <p><strong>Country:</strong>
+                    <a href="{% url 'businesses_by_country' business.country %}">{{ business.country.name }} ({{ business.country.code }})</a>
+                    | <a href="{% url 'users_by_country' business.country %}">Users</a>
+                    | <a href="{% url 'businesses_by_country' business.country %}">Businesses</a>
+                </p>
+                <p><strong>City:</strong>
+                    {% if business.city and business.country %}
+                        <a href="{% url 'businesses_by_city_name' business.country business.city %}">{{ business.city }}</a>
+                        | <a href="{% url 'users_by_city_name' business.country business.city %}">Users</a>
+                        | <a href="{% url 'businesses_by_city_name' business.country business.city %}">Businesses</a>
+                    {% elif business.city %}{{ business.city }}{% else %}—{% endif %}
+                </p>
+                <p><strong>Postal Code:</strong>
+                    {% if business.postal_code and business.country %}
+                        <a href="{% url 'businesses_by_postal_code' business.country business.postal_code %}">{{ business.postal_code }}</a>
+                        | <a href="{% url 'users_by_postal_code' business.country business.postal_code %}">Users</a>
+                        | <a href="{% url 'businesses_by_postal_code' business.country business.postal_code %}">Businesses</a>
+                    {% elif business.postal_code %}{{ business.postal_code }}{% else %}—{% endif %}
+                </p>
+                <p><strong>Post Office Box:</strong>
+                    {% if business.post_office_box and business.country and business.postal_code %}
+                        <a href="{% url 'businesses_by_pobox' business.country business.postal_code business.post_office_box %}">{{ business.post_office_box }}</a>
+                        | <a href="{% url 'users_by_post_office_box' business.country business.postal_code business.post_office_box %}">Users</a>
+                        | <a href="{% url 'businesses_by_pobox' business.country business.postal_code business.post_office_box %}">Businesses</a>
+                    {% elif business.post_office_box %}{{ business.post_office_box }}{% else %}—{% endif %}
+                </p>
+                {% if business.long_description %}
+                    <p><strong>Long Description:</strong> {{ business.long_description }}</p>
+                {% endif %}
+                <p><strong>Created By:</strong>
+                    {% if business.created_by %}
+                        <a href="{% url 'user_profile' business.created_by.username %}">{{ business.created_by.get_full_name|default:business.created_by.username }}</a>
+                    {% else %}—{% endif %}
+                </p>
+                <p><strong>Created On:</strong> {{ business.created_on|date:'Y-m-d H:i' }}</p>
+                <p><strong>Last Updated:</strong> {{ business.updated_on|date:'Y-m-d H:i' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

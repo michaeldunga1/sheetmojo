@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}All Users{% endblock %}
+
+{% block content %}
+<h4>All Users <span class="grey-text">({{ users|length }})</span></h4>
+{% include 'business_listing/list_search.html' %}
+
+{% if users %}
+    {% include 'business_listing/view_toggle.html' %}
+    <ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection{% endif %}">
+        {% for user in users %}
+            <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item avatar{% endif %}">
+                {% if request.GET.view == 'grid' %}<div class="card-panel">{% endif %}
+                {% if user.profile and user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="circle">
+                {% else %}
+                    <i class="material-icons circle">person</i>
+                {% endif %}
+
+                <span class="title">
+                    <a href="{% url 'user_profile' user.username %}" class="teal-text">
+                        {{ user.get_full_name|default:user.username }}
+                    </a>
+                </span>
+
+                <p class="grey-text">{{ user.email }}</p>
+
+                {% if user.profile %}
+                    <p class="profile-meta">
+                        <strong>Country:</strong> {% if user.profile.country %}{{ user.profile.country.name }} ({{ user.profile.country.code }}){% else %}—{% endif %}<br>
+                        <strong>City:</strong> {{ user.profile.city|default:'—' }}<br>
+                        <strong>Postal Code:</strong> {{ user.profile.postal_code|default:'—' }}<br>
+                        <strong>P.O. Box:</strong> {{ user.profile.post_office_box|default:'—' }}
+                    </p>
+
+                    {% if user.profile.about_me %}
+                        <p class="grey-text list-desc">{{ user.profile.about_me|truncatewords:20 }}</p>
+                    {% endif %}
+                {% endif %}
+                {% if request.GET.view == 'grid' %}</div>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <div class="card-panel">
+        <p class="center-align grey-text">No users found.</p>
+    </div>
+{% endif %}
+
+{% include 'business_listing/pagination.html' %}
+{% endblock %}

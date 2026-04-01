@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }}{% endblock %}
+
+{% block content %}
+<div class="detail-shell">
+    <div class="card detail-panel">
+        <div class="card-content">
+            <h3 class="detail-title">{{ profile_user.get_full_name|default:profile_user.username }}</h3>
+            <p class="support-copy">Profile overview{% if profile.about_me %} · {{ profile.about_me|truncatewords:24 }}{% endif %}</p>
+            <div class="detail-panel__meta">
+                <p><strong>Username:</strong> <a href="{% url 'user_profile' profile_user.username %}">{{ profile_user.username }}</a></p>
+                <p><strong>Email:</strong> {{ profile_user.email }}</p>
+                <p><strong>About Me:</strong> {{ profile.about_me|default:'—' }}</p>
+                <p><strong>Country:</strong>
+                    {% if profile.country %}
+                        <a href="{% url 'businesses_by_country' profile.country %}">{{ profile.country.name }} ({{ profile.country.code }})</a>
+                        | <a href="{% url 'users_by_country' profile.country %}">Users</a>
+                        | <a href="{% url 'businesses_by_country' profile.country %}">Businesses</a>
+                    {% else %}—{% endif %}
+                </p>
+                <p><strong>City:</strong>
+                    {% if profile.city and profile.country %}
+                        <a href="{% url 'businesses_by_city_name' profile.country profile.city %}">{{ profile.city }}</a>
+                        | <a href="{% url 'users_by_city_name' profile.country profile.city %}">Users</a>
+                        | <a href="{% url 'businesses_by_city_name' profile.country profile.city %}">Businesses</a>
+                    {% elif profile.city %}{{ profile.city }}{% else %}—{% endif %}
+                </p>
+                <p><strong>Postal Code:</strong>
+                    {% if profile.postal_code and profile.country %}
+                        <a href="{% url 'businesses_by_postal_code' profile.country profile.postal_code %}">{{ profile.postal_code }}</a>
+                        | <a href="{% url 'users_by_postal_code' profile.country profile.postal_code %}">Users</a>
+                        | <a href="{% url 'businesses_by_postal_code' profile.country profile.postal_code %}">Businesses</a>
+                    {% elif profile.postal_code %}{{ profile.postal_code }}{% else %}—{% endif %}
+                </p>
+                <p><strong>Post Office Box:</strong>
+                    {% if profile.post_office_box and profile.country and profile.postal_code %}
+                        <a href="{% url 'businesses_by_pobox' profile.country profile.postal_code profile.post_office_box %}">{{ profile.post_office_box }}</a>
+                        | <a href="{% url 'users_by_post_office_box' profile.country profile.postal_code profile.post_office_box %}">Users</a>
+                        | <a href="{% url 'businesses_by_pobox' profile.country profile.postal_code profile.post_office_box %}">Businesses</a>
+                    {% elif profile.post_office_box %}{{ profile.post_office_box }}{% else %}—{% endif %}
+                </p>
+            </div>
+            {% if request.user == profile_user %}
+                <div class="form-actions">
+                    <a href="{% url 'edit_profile' profile_user.username %}" class="btn waves-effect waves-light">Edit Profile</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="section-block">
+        <h5>Businesses ({{ business_count }})</h5>
+        <ul class="collection z-depth-1">
+    {% for business in businesses %}
+        <li class="collection-item">
+            <a href="{% url 'business_details' business.slug %}">
+                <strong>{{ business.business_name }}</strong>
+            </a>
+            <span class="grey-text meta-inline-gap">
+                <a href="{% url 'businesses_by_category' business.category %}">{{ business.category }}</a>
+                &mdash;
+                <a href="{% url 'businesses_by_city_name' business.country business.city %}">{{ business.city }}</a>,
+                <a href="{% url 'businesses_by_country' business.country %}">{{ business.country.name }} ({{ business.country.code }})</a>
+                {% if business.postal_code %}
+                    , <a href="{% url 'businesses_by_postal_code' business.country business.postal_code %}">{{ business.postal_code }}</a>
+                {% endif %}
+                {% if business.post_office_box %}
+                    , <a href="{% url 'businesses_by_pobox' business.country business.postal_code business.post_office_box %}">PO Box {{ business.post_office_box }}</a>
+                {% endif %}
+            </span>
+        </li>
+    {% empty %}
+        <li class="collection-item">No businesses listed.</li>
+    {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

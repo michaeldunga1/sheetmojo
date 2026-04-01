@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="form-shell">
+    <div class="card form-panel">
+        <div class="card-content">
+            <h3 class="form-title">Edit Profile</h3>
+            <p class="support-copy">A complete profile helps other users understand who you are, where you work, and how your listed businesses relate to real places.</p>
+            <ul class="hint-list">
+                <li>Share only information you are comfortable making public.</li>
+                <li>Structured location fields improve directory filters and search results.</li>
+                <li>Use “About Me” to explain your role or background in a few clear sentences.</li>
+            </ul>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="input-field">
+                    <textarea id="about_me" name="about_me" class="materialize-textarea">{{ profile.about_me }}</textarea>
+                    <label for="about_me">About Me</label>
+                    <span class="helper-text">Describe your background, specialties, or what visitors should know first.</span>
+                </div>
+
+                <div class="input-field">
+                    <select id="country" name="country">
+                        <option value="" {% if not profile.country %}selected{% endif %}>Choose a country</option>
+                        {% for value, label in country_choices %}
+                            <option value="{{ value }}" {% if profile.country == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="country">Country</label>
+                    <span class="helper-text">Country data keeps your profile discoverable in location directories.</span>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <input id="city" name="city" maxlength="100" value="{{ profile.city }}">
+                        <label for="city">City</label>
+                        <span class="helper-text">Use the city name visitors would expect to search for.</span>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <input id="postal_code" name="postal_code" maxlength="20" value="{{ profile.postal_code }}">
+                        <label for="postal_code">Postal Code</label>
+                        <span class="helper-text">Optional, but useful for local discovery.</span>
+                    </div>
+                </div>
+
+                <div class="input-field">
+                    <input id="post_office_box" name="post_office_box" type="number" min="1" step="1" value="{{ profile.post_office_box }}">
+                    <label for="post_office_box">Post Office Box</label>
+                    <span class="helper-text">Numbers only. Leave empty if you do not use one.</span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn waves-effect waves-light">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

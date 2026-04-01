@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Businesses in {{ country_name }} ({{ country_code }}){% endblock %}
+
+{% block content %}
+<h3>Businesses in {{ country_name }} ({{ country_code }})</h3>
+{% include 'business_listing/list_search.html' %}
+{% include 'business_listing/view_toggle.html' %}
+<ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %} list-with-top-gap">
+    {% for business in businesses %}
+        <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item{% endif %}">
+            {% if request.GET.view == 'grid' %}<div class="card-panel">{% endif %}
+            <a href="{% url 'business_details' business.slug %}"><strong>{{ business.business_name }}</strong></a>
+            {% if business.short_description %}
+                <p class="grey-text list-desc">{{ business.short_description }}</p>
+            {% endif %}
+            {% if request.GET.view == 'grid' %}</div>{% endif %}
+        </li>
+    {% empty %}
+        <li class="{% if request.GET.view == 'grid' %}col s12{% else %}collection-item{% endif %}">No businesses found in this country.</li>
+    {% endfor %}
+</ul>
+
+{% include 'business_listing/pagination.html' %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Business Categories{% endblock %}
+
+{% block content %}
+<h3 class="center-align">Business Categories</h3>
+{% include 'business_listing/list_search.html' %}
+{% include 'business_listing/view_toggle.html' %}
+<ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %}">
+    {% for category in categories %}
+        <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item{% endif %}">
+            {% if request.GET.view == 'grid' %}<div class="card-panel">{% endif %}
+            <a href="{% url 'businesses_by_category' category.key|default:category %}">
+                {{ category.label|default:category }}
+            </a>
+            {% if request.GET.view == 'grid' %}</div>{% endif %}
+        </li>
+    {% empty %}
+        <li class="{% if request.GET.view == 'grid' %}col s12{% else %}collection-item{% endif %}">No categories found.</li>
+    {% endfor %}
+</ul>
+<h4 class="center-align section-heading-gap">Countries</h4>
+<ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %}">
+    {% for country in countries %}
+        <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item{% endif %}">
+            {% if request.GET.view == 'grid' %}<div class="card-panel">{% endif %}
+            <a href="{% url 'businesses_by_country' country.code|default:country %}">{{ country.name|default:country }}</a>
+            {% if request.GET.view == 'grid' %}</div>{% endif %}
+        </li>
+    {% endfor %}
+</ul>
+<h4 class="center-align section-heading-gap">Cities</h4>
+<ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %}">
+    {% for city in cities %}
+        <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item{% endif %}">
+            {% if request.GET.view == 'grid' %}<div class="card-panel">{% endif %}
+            <a href="{% url 'businesses_by_city_name' city.country_code city.name %}">{{ city.name }} ({{ city.country_code }} {{ city.postal_code }})</a>
+            {% if city.post_office_box %}
+                | <a href="{% url 'businesses_by_pobox' city.country_code city.postal_code city.post_office_box %}">PO Box {{ city.post_office_box }}</a>
+            {% endif %}
+            {% if request.GET.view == 'grid' %}</div>{% endif %}
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}
+    

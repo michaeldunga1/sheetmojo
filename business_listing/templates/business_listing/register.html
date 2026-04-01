@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="card auth-card">
+        <div class="card-content">
+            <h3 class="auth-title center-align">Create your SheetMojo account</h3>
+            <p class="support-copy center-align">Register once to manage your profile, list businesses, and appear in country and city directories.</p>
+            <ul class="hint-list">
+                <li>Choose a public username that is easy for others to recognize.</li>
+                <li>Use an email you control so sign-in remains dependable.</li>
+                <li>Pick a strong password that is unique to this site.</li>
+            </ul>
+
+            {% if form.non_field_errors %}
+                <div class="card-panel red lighten-4 red-text text-darken-4">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="input-field">
+                    {{ form.username }}
+                    <label for="{{ form.username.id_for_label }}">Username</label>
+                    <span class="helper-text">{{ form.username.help_text }}</span>
+                    {% if form.username.errors %}
+                        <span class="helper-text red-text">{{ form.username.errors|join:" • " }}</span>
+                    {% endif %}
+                </div>
+
+                {% if form.email %}
+                <div class="input-field">
+                    {{ form.email }}
+                    <label for="{{ form.email.id_for_label }}">Email</label>
+                    <span class="helper-text">{{ form.email.help_text }}</span>
+                    {% if form.email.errors %}
+                        <span class="helper-text red-text">{{ form.email.errors|join:" • " }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="input-field">
+                    {{ form.password1 }}
+                    <label for="{{ form.password1.id_for_label }}">Password</label>
+                    <span class="helper-text">{{ form.password1.help_text }}</span>
+                    {% if form.password1.errors %}
+                        <span class="helper-text red-text">{{ form.password1.errors|join:" • " }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="input-field">
+                    {{ form.password2 }}
+                    <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                    <span class="helper-text">{{ form.password2.help_text }}</span>
+                    {% if form.password2.errors %}
+                        <span class="helper-text red-text">{{ form.password2.errors|join:" • " }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="input-field checkbox-field">
+                    <label class="inline-checkbox">
+                        {{ form.consent }}
+                        <span>
+                            {{ form.consent.help_text|safe }}
+                        </span>
+                    </label>
+                    {% if form.consent.errors %}
+                        <span class="helper-text red-text block-helper">
+                            {{ form.consent.errors|join:" • " }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn waves-effect waves-light btn-large btn-full stack-top-lg">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="center-align stack-top-xl">
+                <a href="{% url 'login' %}" class="grey-text text-darken-2">
+                    Already have an account? <strong>Log in</strong>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.input-field input').forEach(function (input) {
+            if (input.value.trim().length > 0) {
+                const label = document.querySelector(`label[for="${input.id}"]`);
+                if (label) label.classList.add('active');
+            }
+        });
+
+        M.updateTextFields();
+    });
+</script>
+{% endblock %}

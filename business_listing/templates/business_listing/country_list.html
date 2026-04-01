@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Countries{% endblock %}
+
+{% block content %}
+<h4>Countries{% if page_obj %} <span class="grey-text">({{ page_obj.paginator.count }})</span>{% endif %}</h4>
+{% include 'business_listing/list_search.html' %}
+{% include 'business_listing/view_toggle.html' %}
+<ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection{% endif %}">
+    {% for country in countries %}
+        <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item{% endif %}">
+            {% if request.GET.view == 'grid' %}<div class="card-panel">{% endif %}
+            <strong>{{ country.code }}</strong> - {{ country.name }}
+            | <a href="{% url 'users_by_country' country.code %}">Users</a>
+            | <a href="{% url 'businesses_by_country' country.code %}">Businesses</a>
+            {% if request.GET.view == 'grid' %}</div>{% endif %}
+        </li>
+    {% empty %}
+        <li class="{% if request.GET.view == 'grid' %}col s12{% else %}collection-item{% endif %}">No countries found.</li>
+    {% endfor %}
+</ul>
+
+{% include 'business_listing/pagination.html' %}
+{% endblock %}
+

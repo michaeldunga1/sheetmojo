@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b3c49">
+    <meta name="description" content="SheetMojo helps people discover businesses, profiles, and locations through a clear, searchable directory.">
+    <title>{% block title %}SheetMojo{% endblock %}</title>
+    <link href="{% static 'css/tailwind.css' %}" rel="stylesheet">
+    <link href="{% static 'business_listing/style.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="app-body">
+    {% include 'business_listing/navbar.html' %}
+
+    <main class="app-main">
+        <div class="container page-shell">
+            {% if messages %}
+                <section class="flash-stack" aria-label="Notifications">
+                    {% for message in messages %}
+                        <div class="flash-message flash-{{ message.tags|default:'info' }} card-panel">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="container app-footer__inner">
+            <p class="app-footer__title">Need a quick start?</p>
+            <p class="app-footer__text">Browse businesses, switch between list and grid views, and use search on every directory page to narrow results by name, location, category, email, or description.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.Sidenav.init(document.querySelectorAll('.sidenav'));
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.updateTextFields();
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

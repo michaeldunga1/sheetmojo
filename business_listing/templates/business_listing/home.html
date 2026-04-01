@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}SheetMojo - Business Directory & User Listings{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="SheetMojo - Discover businesses and connect with users worldwide.">
+<meta name="keywords" content="business directory, user listings, sheetmojo, local businesses">
+{% endblock %}
+
+{% block content %}
+<h3>{{ page_title }}</h3>
+{% include 'business_listing/list_search.html' %}
+{% include 'business_listing/view_toggle.html' %}
+<ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %}">
+    {% for business in businesses %}
+        <li class="{% if request.GET.view == 'grid' %}col s12 m6 l4{% else %}collection-item{% endif %}">
+            <div{% if request.GET.view == 'grid' %} class="card-panel"{% endif %}>
+                <a href="{% url 'business_details' business.slug %}">
+                    <strong>{{ business.business_name }}</strong>
+                </a>
+                <span class="grey-text meta-inline-gap">
+                    <a href="{% url 'businesses_by_category' business.category %}">{{ business.category }}</a>
+                    &mdash;
+                    <a href="{% url 'businesses_by_city_name' business.country business.city %}">{{ business.city }}</a>,
+                    <a href="{% url 'businesses_by_country' business.country %}">{{ business.country.name }} ({{ business.country.code }})</a>
+                </span>
+                {% if business.short_description %}
+                    <p class="grey-text list-desc">{{ business.short_description }}</p>
+                {% endif %}
+            </div>
+        </li>
+    {% empty %}
+        <li class="{% if request.GET.view == 'grid' %}col s12{% else %}collection-item{% endif %}">No businesses found.</li>
+    {% endfor %}
+</ul>
+
+{% include 'business_listing/pagination.html' %}
+{% endblock %}

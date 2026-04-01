@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="card auth-card">
+        <div class="card-content">
+            <h3 class="auth-title">Welcome back</h3>
+            <p class="support-copy">Sign in with your username or email address. SheetMojo keeps sessions protected with CSRF checks, secure cookies, and rate limits on authentication endpoints.</p>
+            <ul class="hint-list">
+                <li>Usernames and emails both work in the first field.</li>
+                <li>Passwords are case-sensitive.</li>
+                <li>If login fails, double-check spacing and capitalization first.</li>
+            </ul>
+
+            {% if form.non_field_errors %}
+                <div class="card-panel red lighten-4 red-text text-darken-4">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}?next=/" autocomplete="off">
+                {% csrf_token %}
+                <div class="input-field">
+                    {{ form.username }}
+                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    <span class="helper-text">{{ form.username.help_text }}</span>
+                    {% if form.username.errors %}
+                        <span class="helper-text red-text">{{ form.username.errors|join:' • ' }}</span>
+                    {% endif %}
+                </div>
+                <div class="input-field">
+                    {{ form.password }}
+                    <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                    <span class="helper-text">{{ form.password.help_text }}</span>
+                    {% if form.password.errors %}
+                        <span class="helper-text red-text">{{ form.password.errors|join:' • ' }}</span>
+                    {% endif %}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn waves-effect waves-light">Login</button>
+                </div>
+            </form>
+
+            <div class="center-align stack-top-lg">
+                <a href="{% url 'register' %}">Don't have an account? Register</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

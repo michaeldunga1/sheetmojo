@@ -1,0 +1,16 @@
+<form method="get" class="row list-search">
+    <div class="input-field col s12 m8 l9">
+        <input id="list-search" type="text" name="q" value="{{ q|default:'' }}" placeholder="Search by name, category, city, country, email, postal code, or description">
+        <label for="list-search" class="active">Search</label>
+        <span class="helper-text">Tip: search adapts to the current page, so country pages search within that country and user pages search within that user set.</span>
+    </div>
+    <div class="col s12 m4 l3 list-search-actions">
+        {% if request.GET.view %}
+            <input type="hidden" name="view" value="{{ request.GET.view }}">
+        {% endif %}
+        <button type="submit" class="btn waves-effect waves-light">Apply</button>
+        {% if q %}
+            <a href="{{ request.path }}{% if request.GET.view %}?view={{ request.GET.view }}{% endif %}" class="btn-flat">Clear</a>
+        {% endif %}
+    </div>
+</form>

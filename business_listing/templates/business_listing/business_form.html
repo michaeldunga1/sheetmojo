@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if edit_mode %}Edit Business{% else %}Add Business{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-shell">
+    <div class="card form-panel">
+        <div class="card-content">
+            <h3 class="form-title">{% if edit_mode %}Edit Business{% else %}Add Business{% endif %}</h3>
+            <p class="support-copy">Well-structured listings are easier to discover in search results and location directories. Fill in the most precise information you have.</p>
+            <ul class="hint-list">
+                <li>Choose the category people are most likely to browse first.</li>
+                <li>Use the business’s real city and postal details to improve search accuracy.</li>
+                <li>Keep the short description concise; use the long description for richer context.</li>
+            </ul>
+
+            {% if error %}
+                <div class="card-panel red lighten-4 red-text text-darken-4">{{ error }}</div>
+            {% endif %}
+            {% if business_limit_reached and not edit_mode %}
+                <div class="card-panel amber lighten-4 amber-text text-darken-4">
+                    You have reached your limit ({{ current_business_count }}/{{ max_businesses_per_user }}) and cannot add more businesses.
+                </div>
+            {% else %}
+            <form method="post" class="col s12">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="business_name" name="business_name" type="text" class="validate" maxlength="255" required value="{{ data.business_name|default:business.business_name|default:'' }}">
+                        <label for="business_name">Business Name</label>
+                        <span class="helper-text">Use the public-facing name customers would search for.</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="category" name="category" type="text" class="validate" maxlength="100" required value="{{ data.category|default:business.category|default:'' }}">
+                        <label for="category">Category</label>
+                        <span class="helper-text">Enter any category that fits your business (e.g. "Bakery", "Carpentry", "Consulting").</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <select id="country" name="country" required>
+                            <option value="" disabled {% if not data.country|default:business.country %}selected{% endif %}>Choose a country</option>
+                            {% for value, label in country_choices %}
+                                <option value="{{ value }}" {% if data.country|default:business.country == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="country">Country</label>
+                        <span class="helper-text">Country selection standardizes location data across the directory.</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <input id="city" name="city" type="text" class="validate" maxlength="100" required value="{{ data.city|default:business.city|default:'' }}">
+                        <label for="city">City</label>
+                        <span class="helper-text">Type the city exactly as locals would expect it.</span>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <input id="postal_code" name="postal_code" type="text" class="validate" maxlength="20" value="{{ data.postal_code|default:business.postal_code|default:'' }}">
+                        <label for="postal_code">Postal Code</label>
+                        <span class="helper-text">Optional, but recommended for better location filtering.</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input id="post_office_box" name="post_office_box" type="number" min="1" step="1" class="validate" value="{{ data.post_office_box|default:business.post_office_box|default:'' }}">
+                        <label for="post_office_box">P.O. Box</label>
+                        <span class="helper-text">Use only digits. Leave blank if the business does not publish one.</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <textarea id="short_description" name="short_description" maxlength="255" class="materialize-textarea">{{ data.short_description|default:business.short_description|default:'' }}</textarea>
+                        <label for="short_description">Short Description</label>
+                        <span class="helper-text">Summarize the business in one helpful sentence.</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <textarea id="long_description" name="long_description" class="materialize-textarea">{{ data.long_description|default:business.long_description|default:'' }}</textarea>
+                        <label for="long_description">Long Description</label>
+                        <span class="helper-text">Explain what the business offers, who it serves, and what makes it useful.</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn waves-effect waves-light btn-full stack-top-lg">{% if edit_mode %}Save Changes{% else %}Publish Listing{% endif %}</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
