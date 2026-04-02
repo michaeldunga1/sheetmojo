@@ -15,14 +15,15 @@ class UserProfile(models.Model):
         related_name='profile'
     )
     about_me = models.TextField(
-        blank=True,
+        default='N/A',
         verbose_name="About Me",
         help_text="Tell others a little bit about yourself or your business experience."
     )
-    country = CountryField(blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, default='')
-    postal_code = models.CharField(max_length=20, blank=True, default='')
-    post_office_box = models.PositiveIntegerField(blank=True, null=True)
+    country = CountryField(default='US')
+    city = models.CharField(max_length=100, default='Unknown')
+    postal_code = models.CharField(max_length=20, default='00000')
+    post_office_box = models.PositiveIntegerField(default=1)
+    tags = models.CharField(max_length=255, default='general')
 
     # You can add more fields later, for example:
     # phone = models.CharField(max_length=20, blank=True)

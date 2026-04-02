@@ -5,7 +5,6 @@ from ..models import BusinessDetails
 
 def businesses_by_category(request, category):
     query = request.GET.get('q', '').strip()
-    all_choices = dict(BusinessDetails.CATEGORY_CHOICES)
     businesses = BusinessDetails.objects.filter(category=category)
     if query:
         businesses = businesses.filter(
@@ -18,7 +17,7 @@ def businesses_by_category(request, category):
         )
     paginator = Paginator(businesses, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
-    category_label = all_choices.get(category, category)
+    category_label = category
     context = {
         'businesses': page_obj,
         'page_obj': page_obj,

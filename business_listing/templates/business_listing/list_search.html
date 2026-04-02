@@ -1,16 +1,31 @@
 <form method="get" class="row list-search">
     <div class="input-field col s12 m8 l9">
-        <input id="list-search" type="text" name="q" value="{{ q|default:'' }}" placeholder="Search by name, category, city, country, email, postal code, or description">
+        <input id="list-search" type="text" name="q" value="{{ q|default:'' }}" placeholder="{{ search_placeholder|default:'Search by name, category, city, country, email, postal code, or description' }}">
         <label for="list-search" class="active">Search</label>
-        <span class="helper-text">Tip: search adapts to the current page, so country pages search within that country and user pages search within that user set.</span>
+        <span class="helper-text">{{ search_help_text|default:'Tip: search adapts to the current page, so country pages search within that country and user pages search within that user set.' }}</span>
     </div>
     <div class="col s12 m4 l3 list-search-actions">
         {% if request.GET.view %}
             <input type="hidden" name="view" value="{{ request.GET.view }}">
         {% endif %}
+        {% if sort %}
+            <input type="hidden" name="sort" value="{{ sort }}">
+        {% endif %}
+        {% if filter_category %}
+            <input type="hidden" name="filter_category" value="{{ filter_category }}">
+        {% endif %}
+        {% if filter_currency %}
+            <input type="hidden" name="filter_currency" value="{{ filter_currency }}">
+        {% endif %}
+        {% if min_price %}
+            <input type="hidden" name="min_price" value="{{ min_price }}">
+        {% endif %}
+        {% if max_price %}
+            <input type="hidden" name="max_price" value="{{ max_price }}">
+        {% endif %}
         <button type="submit" class="btn waves-effect waves-light">Apply</button>
         {% if q %}
-            <a href="{{ request.path }}{% if request.GET.view %}?view={{ request.GET.view }}{% endif %}" class="btn-flat">Clear</a>
+            <a href="{{ request.path }}{% if request.GET.view or sort or filter_category or filter_currency or min_price or max_price %}?{% endif %}{% if request.GET.view %}view={{ request.GET.view }}{% endif %}{% if request.GET.view and sort or request.GET.view and filter_category or request.GET.view and filter_currency or request.GET.view and min_price or request.GET.view and max_price %}&{% endif %}{% if sort %}sort={{ sort }}{% endif %}{% if sort and filter_category or sort and filter_currency or sort and min_price or sort and max_price %}&{% endif %}{% if filter_category %}filter_category={{ filter_category|urlencode }}{% endif %}{% if filter_category and filter_currency or filter_category and min_price or filter_category and max_price %}&{% endif %}{% if filter_currency %}filter_currency={{ filter_currency }}{% endif %}{% if filter_currency and min_price or filter_currency and max_price %}&{% endif %}{% if min_price %}min_price={{ min_price }}{% endif %}{% if min_price and max_price %}&{% endif %}{% if max_price %}max_price={{ max_price }}{% endif %}" class="btn-flat">Clear</a>
         {% endif %}
     </div>
 </form>

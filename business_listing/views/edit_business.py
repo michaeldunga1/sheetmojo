@@ -20,14 +20,15 @@ def edit_business(request, slug):
         country = request.POST.get('country', '').strip().upper()
         city = request.POST.get('city', '').strip()
         postal_code = request.POST.get('postal_code', '').strip()
-        post_office_box = request.POST.get('post_office_box', '').strip() or None
+        post_office_box = request.POST.get('post_office_box', '').strip()
+        tags = request.POST.get('tags', '').strip()
         short_description = request.POST.get('short_description', '').strip()
         long_description = request.POST.get('long_description', '').strip()
 
-        if not business_name or not category or not country or not city:
-            messages.error(request, 'Business name, category, country, and city are required.')
+        if not all([business_name, category, country, city, postal_code, post_office_box, tags, short_description, long_description]):
+            messages.error(request, 'All fields are required.')
             return render(request, 'business_listing/business_form.html', _business_form_context(
-                error='Business name, category, country, and city are required.',
+                error='All fields are required.',
                 business=business,
                 data=request.POST,
                 edit_mode=True,
@@ -42,17 +43,18 @@ def edit_business(request, slug):
                 edit_mode=True,
             ))
 
-        if post_office_box:
-            try:
-                post_office_box = int(post_office_box)
-            except (TypeError, ValueError):
-                messages.error(request, 'Post office box must be a whole number.')
-                return render(request, 'business_listing/business_form.html', _business_form_context(
-                    error='Post office box must be a whole number.',
-                    business=business,
-                    data=request.POST,
-                    edit_mode=True,
-                ))
+        try:
+            post_office_box = int(post_office_box)
+            if post_office_box < 1:
+                raise ValueError()
+        except (TypeError, ValueError):
+            messages.error(request, 'Post office box must be a positive whole number.')
+            return render(request, 'business_listing/business_form.html', _business_form_context(
+                error='Post office box must be a positive whole number.',
+                business=business,
+                data=request.POST,
+                edit_mode=True,
+            ))
 
         business.business_name = business_name
         business.category = category
@@ -60,6 +62,7 @@ def edit_business(request, slug):
         business.city = city
         business.postal_code = postal_code
         business.post_office_box = post_office_box
+        business.tags = tags
         business.short_description = short_description
         business.long_description = long_description
         business.save()

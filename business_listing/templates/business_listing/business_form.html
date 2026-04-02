@@ -60,23 +60,31 @@
                         <span class="helper-text">Type the city exactly as locals would expect it.</span>
                     </div>
                     <div class="input-field col s12 m6">
-                        <input id="postal_code" name="postal_code" type="text" class="validate" maxlength="20" value="{{ data.postal_code|default:business.postal_code|default:'' }}">
+                        <input id="postal_code" name="postal_code" type="text" class="validate" maxlength="20" required value="{{ data.postal_code|default:business.postal_code|default:'' }}">
                         <label for="postal_code">Postal Code</label>
-                        <span class="helper-text">Optional, but recommended for better location filtering.</span>
+                        <span class="helper-text">Required for better location filtering.</span>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="input-field col s12">
-                        <input id="post_office_box" name="post_office_box" type="number" min="1" step="1" class="validate" value="{{ data.post_office_box|default:business.post_office_box|default:'' }}">
+                        <input id="post_office_box" name="post_office_box" type="number" min="1" step="1" class="validate" required value="{{ data.post_office_box|default:business.post_office_box|default:'' }}">
                         <label for="post_office_box">P.O. Box</label>
-                        <span class="helper-text">Use only digits. Leave blank if the business does not publish one.</span>
+                        <span class="helper-text">Use only digits.</span>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="input-field col s12">
-                        <textarea id="short_description" name="short_description" maxlength="255" class="materialize-textarea">{{ data.short_description|default:business.short_description|default:'' }}</textarea>
+                        <input id="tags" name="tags" type="text" class="validate" maxlength="255" required value="{{ data.tags|default:business.tags|default:'' }}">
+                        <label for="tags">Tags</label>
+                        <span class="helper-text">Add comma-separated tags (for example: retail, local, wholesale).</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <textarea id="short_description" name="short_description" maxlength="255" required class="materialize-textarea">{{ data.short_description|default:business.short_description|default:'' }}</textarea>
                         <label for="short_description">Short Description</label>
                         <span class="helper-text">Summarize the business in one helpful sentence.</span>
                     </div>
@@ -84,7 +92,7 @@
 
                 <div class="row">
                     <div class="input-field col s12">
-                        <textarea id="long_description" name="long_description" class="materialize-textarea">{{ data.long_description|default:business.long_description|default:'' }}</textarea>
+                        <textarea id="long_description" name="long_description" required class="materialize-textarea">{{ data.long_description|default:business.long_description|default:'' }}</textarea>
                         <label for="long_description">Long Description</label>
                         <span class="helper-text">Explain what the business offers, who it serves, and what makes it useful.</span>
                     </div>

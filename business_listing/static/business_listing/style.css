@@ -175,7 +175,6 @@ a:hover {
 }
 
 .app-nav__links,
-.app-nav__links li,
 .app-nav__links a {
   height: auto;
   line-height: normal;
@@ -190,6 +189,11 @@ a:hover {
   gap: 0;
   margin: 0;
   min-width: 0;
+}
+
+.app-nav__links > * {
+  display: inline-flex;
+  align-items: center;
 }
 
 .app-nav__links a,
@@ -319,6 +323,18 @@ a:hover {
   border-radius: calc(var(--app-radius) - 4px);
   background: var(--app-surface);
   box-shadow: 0 10px 30px rgba(15, 37, 44, 0.06);
+}
+
+.detail-actions {
+  margin-bottom: 1.5rem;
+}
+
+.detail-divider {
+  margin: 2rem 0 1.5rem;
+}
+
+.inline-form {
+  display: inline;
 }
 
 .list-search .input-field {
@@ -472,11 +488,24 @@ a:hover {
   border: 1px solid var(--app-border);
 }
 
+.related-products-grid {
+  margin-top: 0.75rem;
+}
+
+.related-product-card {
+  height: 100%;
+  margin: 0;
+  border-radius: 16px;
+  border: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.84);
+}
+
 ul.row.list-grid {
   margin-left: -0.75rem;
   margin-right: -0.75rem;
 }
 
+.row.list-grid > .grid-col,
 ul.row.list-grid > li.col {
   display: flex;
   margin-bottom: 1rem;
@@ -484,6 +513,7 @@ ul.row.list-grid > li.col {
   padding-right: 0.75rem;
 }
 
+.row.list-grid > .grid-col .card-panel,
 ul.row.list-grid > li.col .card-panel {
   width: 100%;
   height: 100%;
@@ -499,26 +529,48 @@ ul.row.list-grid > li.col .card-panel {
   background: rgba(255, 255, 255, 0.92);
 }
 
+.row.list-grid > .grid-col .card-panel:hover,
 ul.row.list-grid > li.col .card-panel:hover {
   transform: translateY(-2px);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
 }
 
+.row.list-grid > .grid-col .card-panel .grey-text,
 ul.row.list-grid > li.col .card-panel .grey-text {
   line-height: 1.5;
   display: inline-block;
 }
 
-ul.pagination {
+.pagination-bar {
   margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
 }
 
-ul.pagination li {
+.pagination-bar__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0 0.85rem;
   border-radius: 999px;
+  color: var(--app-accent-deep);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--app-border);
 }
 
-ul.pagination li.active {
+.pagination-bar__item.active {
   background-color: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #ffffff;
+}
+
+.pagination-bar__item.disabled {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 @media (max-width: 992px) {

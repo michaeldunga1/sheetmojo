@@ -15,6 +15,7 @@ EMPTY_BUSINESS = SimpleNamespace(
     city='',
     postal_code='',
     post_office_box='',
+    tags='',
     short_description='',
     long_description='',
 )
@@ -52,14 +53,15 @@ def add_business(request):
         country = request.POST.get('country', '').strip().upper()
         city = request.POST.get('city', '').strip()
         postal_code = request.POST.get('postal_code', '').strip()
-        post_office_box = request.POST.get('post_office_box', '').strip() or None
+        post_office_box = request.POST.get('post_office_box', '').strip()
+        tags = request.POST.get('tags', '').strip()
         short_description = request.POST.get('short_description', '').strip()
         long_description = request.POST.get('long_description', '').strip()
 
-        if not business_name or not category or not country or not city:
-            messages.error(request, 'Business name, category, country, and city are required.')
+        if not all([business_name, category, country, city, postal_code, post_office_box, tags, short_description, long_description]):
+            messages.error(request, 'All fields are required.')
             return render(request, 'business_listing/business_form.html', _business_form_context(
-                error='Business name, category, country, and city are required.',
+                error='All fields are required.',
                 data=request.POST,
                 edit_mode=False,
                 business_limit_reached=limit_reached,
@@ -78,19 +80,20 @@ def add_business(request):
                 max_businesses_per_user=MAX_BUSINESSES_PER_USER,
             ))
 
-        if post_office_box:
-            try:
-                post_office_box = int(post_office_box)
-            except (TypeError, ValueError):
-                messages.error(request, 'Post office box must be a whole number.')
-                return render(request, 'business_listing/business_form.html', _business_form_context(
-                    error='Post office box must be a whole number.',
-                    data=request.POST,
-                    edit_mode=False,
-                    business_limit_reached=limit_reached,
-                    current_business_count=current_count,
-                    max_businesses_per_user=MAX_BUSINESSES_PER_USER,
-                ))
+        try:
+            post_office_box = int(post_office_box)
+            if post_office_box < 1:
+                raise ValueError()
+        except (TypeError, ValueError):
+            messages.error(request, 'Post office box must be a positive whole number.')
+            return render(request, 'business_listing/business_form.html', _business_form_context(
+                error='Post office box must be a positive whole number.',
+                data=request.POST,
+                edit_mode=False,
+                business_limit_reached=limit_reached,
+                current_business_count=current_count,
+                max_businesses_per_user=MAX_BUSINESSES_PER_USER,
+            ))
 
         BusinessDetails.objects.create(
             business_name=business_name,
@@ -99,6 +102,7 @@ def add_business(request):
             city=city,
             postal_code=postal_code,
             post_office_box=post_office_box,
+            tags=tags,
             short_description=short_description,
             long_description=long_description,
             created_by=request.user,

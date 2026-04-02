@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load tag_helpers %}
 
 {% block title %}{{ profile_user.get_full_name|default:profile_user.username }}{% endblock %}
 
@@ -9,14 +10,34 @@
             <h3 class="detail-title">{{ profile_user.get_full_name|default:profile_user.username }}</h3>
             <p class="support-copy">Profile overview{% if profile.about_me %} · {{ profile.about_me|truncatewords:24 }}{% endif %}</p>
             <div class="detail-panel__meta">
-                <p><strong>Username:</strong> <a href="{% url 'user_profile' profile_user.username %}">{{ profile_user.username }}</a></p>
-                <p><strong>Email:</strong> {{ profile_user.email }}</p>
-                <p><strong>About Me:</strong> {{ profile.about_me|default:'—' }}</p>
+                <p>
+                    <strong>Username:</strong> <a href="{% url 'user_profile' profile_user.username %}">{{ profile_user.username }}</a>
+                    | <a href="{% url 'all_users' %}?q={{ profile_user.username|urlencode }}">Similar Users</a>
+                    | <a href="{% url 'listed_businesses' %}?q={{ profile_user.username|urlencode }}">Similar Businesses</a>
+                    | <a href="{% url 'product_list' %}?q={{ profile_user.username|urlencode }}">Similar Products</a>
+                </p>
+                <p>
+                    <strong>Email:</strong> {{ profile_user.email|default:'—' }}
+                    {% if profile_user.email %}
+                    | <a href="{% url 'all_users' %}?q={{ profile_user.email|urlencode }}">Similar Users</a>
+                    | <a href="{% url 'listed_businesses' %}?q={{ profile_user.email|urlencode }}">Similar Businesses</a>
+                    | <a href="{% url 'product_list' %}?q={{ profile_user.email|urlencode }}">Similar Products</a>
+                    {% endif %}
+                </p>
+                <p>
+                    <strong>About Me:</strong> {{ profile.about_me|default:'—' }}
+                    {% if profile.about_me %}
+                    | <a href="{% url 'all_users' %}?q={{ profile.about_me|truncatewords:6|urlencode }}">Similar Users</a>
+                    | <a href="{% url 'listed_businesses' %}?q={{ profile.about_me|truncatewords:6|urlencode }}">Similar Businesses</a>
+                    | <a href="{% url 'product_list' %}?q={{ profile.about_me|truncatewords:6|urlencode }}">Similar Products</a>
+                    {% endif %}
+                </p>
                 <p><strong>Country:</strong>
                     {% if profile.country %}
                         <a href="{% url 'businesses_by_country' profile.country %}">{{ profile.country.name }} ({{ profile.country.code }})</a>
                         | <a href="{% url 'users_by_country' profile.country %}">Users</a>
                         | <a href="{% url 'businesses_by_country' profile.country %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ profile.country.name|urlencode }}">Products</a>
                     {% else %}—{% endif %}
                 </p>
                 <p><strong>City:</strong>
@@ -24,6 +45,7 @@
                         <a href="{% url 'businesses_by_city_name' profile.country profile.city %}">{{ profile.city }}</a>
                         | <a href="{% url 'users_by_city_name' profile.country profile.city %}">Users</a>
                         | <a href="{% url 'businesses_by_city_name' profile.country profile.city %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ profile.city|urlencode }}">Products</a>
                     {% elif profile.city %}{{ profile.city }}{% else %}—{% endif %}
                 </p>
                 <p><strong>Postal Code:</strong>
@@ -31,6 +53,7 @@
                         <a href="{% url 'businesses_by_postal_code' profile.country profile.postal_code %}">{{ profile.postal_code }}</a>
                         | <a href="{% url 'users_by_postal_code' profile.country profile.postal_code %}">Users</a>
                         | <a href="{% url 'businesses_by_postal_code' profile.country profile.postal_code %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ profile.postal_code|urlencode }}">Products</a>
                     {% elif profile.postal_code %}{{ profile.postal_code }}{% else %}—{% endif %}
                 </p>
                 <p><strong>Post Office Box:</strong>
@@ -38,7 +61,20 @@
                         <a href="{% url 'businesses_by_pobox' profile.country profile.postal_code profile.post_office_box %}">{{ profile.post_office_box }}</a>
                         | <a href="{% url 'users_by_post_office_box' profile.country profile.postal_code profile.post_office_box %}">Users</a>
                         | <a href="{% url 'businesses_by_pobox' profile.country profile.postal_code profile.post_office_box %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ profile.post_office_box|urlencode }}">Products</a>
                     {% elif profile.post_office_box %}{{ profile.post_office_box }}{% else %}—{% endif %}
+                </p>
+                <p>
+                    <strong>Tags:</strong>
+                    {% with profile.tags|split_tags as profile_tags %}
+                        {% if profile_tags %}
+                            {% for tag in profile_tags %}
+                                <a href="{% url 'users_by_tag' tag %}">{{ tag }}</a>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    {% endwith %}
                 </p>
             </div>
             {% if request.user == profile_user %}
@@ -51,6 +87,11 @@
 
     <section class="section-block">
         <h5>Businesses ({{ business_count }})</h5>
+        {% if request.user == profile_user and request.user.businesses.count < 3 %}
+        <div class="form-actions">
+            <a href="{% url 'add_business' %}" class="btn waves-effect waves-light">Add Business</a>
+        </div>
+        {% endif %}
         <ul class="collection z-depth-1">
     {% for business in businesses %}
         <li class="collection-item">
@@ -69,6 +110,15 @@
                     , <a href="{% url 'businesses_by_pobox' business.country business.postal_code business.post_office_box %}">PO Box {{ business.post_office_box }}</a>
                 {% endif %}
             </span>
+            {% if user.is_authenticated and user == business.created_by %}
+                <div class="card-action no-padding-top">
+                    <a href="{% url 'edit_business' business.slug %}">Edit</a>
+                    <form method="post" action="{% url 'delete_business' business.slug %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this business?');">Delete</button>
+                    </form>
+                </div>
+            {% endif %}
         </li>
     {% empty %}
         <li class="collection-item">No businesses listed.</li>

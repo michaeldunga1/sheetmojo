@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row valign-wrapper">
+    <div class="col s12 m8">
+        <h3>{{ page_title }}</h3>
+        {% if selected_category %}
+        <p class="support-copy">Browsing the <strong>{{ selected_category }}</strong> category. <a href="{% url 'product_list' %}">View all products</a>.</p>
+        {% endif %}
+    </div>
+    {% if user.is_authenticated and user.businesses.exists %}
+    <div class="col s12 m4 right-align">
+        <a href="{% url 'listed_businesses' %}" class="btn-flat">Manage Businesses</a>
+    </div>
+    {% endif %}
+</div>
+
+{% include 'business_listing/list_search.html' %}
+{% if filter_error %}
+<div class="card-panel red lighten-4 red-text text-darken-4">{{ filter_error }}</div>
+{% endif %}
+<form method="get" class="row list-search">
+    <div class="input-field col s12 m3">
+        {% if selected_category %}
+            <input type="text" value="{{ selected_category }}" readonly title="Selected category" placeholder="Selected category">
+            <label class="active">Category</label>
+            <input type="hidden" name="filter_category" value="{{ selected_category }}">
+        {% else %}
+            <select id="filter_category" name="filter_category">
+                <option value="" {% if not filter_category %}selected{% endif %}>All categories</option>
+                {% for category_name in available_categories %}
+                    <option value="{{ category_name }}" {% if filter_category == category_name %}selected{% endif %}>{{ category_name }}</option>
+                {% endfor %}
+            </select>
+            <label for="filter_category">Category</label>
+        {% endif %}
+    </div>
+    <div class="input-field col s12 m3">
+        <select id="filter_currency" name="filter_currency">
+            <option value="" {% if not filter_currency %}selected{% endif %}>Any currency</option>
+            {% for value, label in currency_choices %}
+                <option value="{{ value }}" {% if filter_currency == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <label for="filter_currency">Currency</label>
+    </div>
+    <div class="input-field col s12 m2">
+        <input id="min_price" type="number" step="0.01" min="0" name="min_price" value="{{ min_price|default:'' }}">
+        <label for="min_price" class="active">Min Price</label>
+    </div>
+    <div class="input-field col s12 m2">
+        <input id="max_price" type="number" step="0.01" min="0" name="max_price" value="{{ max_price|default:'' }}">
+        <label for="max_price" class="active">Max Price</label>
+    </div>
+    <div class="col s12 m2 list-search-actions">
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if request.GET.view %}<input type="hidden" name="view" value="{{ request.GET.view }}">{% endif %}
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        <button type="submit" class="btn waves-effect waves-light">Filter</button>
+    </div>
+</form>
+{% if selected_category %}
+<div class="view-toggle right-align">
+    <span class="grey-text text-darken-1">Sort:</span>
+    <a href="?sort=newest{% if request.GET.view %}&view={{ request.GET.view }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if filter_currency %}&filter_currency={{ filter_currency }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="btn-flat {% if sort|default:'newest' == 'newest' %}blue-text text-darken-2{% endif %}">Newest</a>
+    <a href="?sort=price_asc{% if request.GET.view %}&view={{ request.GET.view }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if filter_currency %}&filter_currency={{ filter_currency }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="btn-flat {% if sort == 'price_asc' %}blue-text text-darken-2{% endif %}">Price Low to High</a>
+    <a href="?sort=price_desc{% if request.GET.view %}&view={{ request.GET.view }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}{% if filter_currency %}&filter_currency={{ filter_currency }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}" class="btn-flat {% if sort == 'price_desc' %}blue-text text-darken-2{% endif %}">Price High to Low</a>
+</div>
+{% endif %}
+{% include 'business_listing/view_toggle.html' %}
+
+<div class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %}">
+{% for product in products %}
+    <div class="{% if request.GET.view == 'grid' %}col s12 m6 l4 grid-col{% else %}collection-item{% endif %}">
+        <div{% if request.GET.view == 'grid' %} class="card-panel"{% endif %}>
+            {% if request.GET.view == 'grid' and product.product_thumbnail %}
+                <img src="{{ product.product_thumbnail.url }}" alt="{{ product.product_name }}" class="responsive-img product-list-thumb" loading="lazy" decoding="async">
+            {% elif request.GET.view == 'grid' and product.product_image %}
+                <img src="{{ product.product_image.url }}" alt="{{ product.product_name }}" class="responsive-img product-list-thumb" loading="lazy" decoding="async">
+            {% endif %}
+            <a href="{% url 'product_detail' product.slug %}"><strong>{{ product.product_name }}</strong></a>
+            <span class="grey-text meta-inline-gap">{{ product.currency }} {{ product.price }} · <a href="{% url 'products_by_category' product.product_category %}">{{ product.product_category }}</a> · <a href="{% url 'business_details' product.business.slug %}">{{ product.business.business_name }}</a></span>
+            {% if product.product_description %}<p class="grey-text list-desc">{{ product.product_description|truncatewords:24 }}</p>{% endif %}
+            <p class="grey-text list-desc">{{ product.get_terms_of_sale_display }}{% if product.business.city %} · {{ product.business.city }}{% endif %}{% if product.business.country %}, {{ product.business.country.name }}{% endif %}</p>
+            {% if user.is_authenticated and user == product.business.created_by %}
+            <div class="card-action no-padding-top">
+                {% if product.business.products.count < 10 %}
+                <a href="{% url 'add_product' product.business.slug %}">Add</a>
+                {% endif %}
+                <a href="{% url 'edit_product' product.business.slug product.slug %}">Edit</a>
+                <form method="post" action="{% url 'delete_product' product.business.slug product.slug %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this product?');">Delete</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% empty %}
+    <div class="{% if request.GET.view == 'grid' %}col s12 grid-col{% else %}collection-item{% endif %}">No products found.</div>
+{% endfor %}
+</div>
+
+{% include 'business_listing/pagination.html' %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        M.FormSelect.init(document.querySelectorAll('select'));
+    });
+</script>
+{% endblock %}

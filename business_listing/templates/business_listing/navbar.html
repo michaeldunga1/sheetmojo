@@ -11,68 +11,8 @@
             <i class="material-icons">menu</i>
         </a>
 
-        <ul class="right hide-on-med-and-down app-nav__links">
-            <li><a href="{% url 'listed_businesses' %}">Businesses</a></li>
-            <li><a href="{% url 'all_users' %}">Users</a></li>
-            <li><a href="{% url 'country_list' %}">Countries</a></li>
-
-            {% if user.is_authenticated %}
-                {% if user.businesses.count < 3 %}
-                    <li><a href="{% url 'add_business' %}" class="app-nav__cta">Add Business</a></li>
-                {% endif %}
-                <li>
-                    <a href="{% url 'user_profile' user.username %}">
-                        {{ user.get_full_name|default:user.username }}
-                    </a>
-                </li>
-                {% if user.is_superuser %}
-                    <li><a href="{% url 'admin:index' %}">Admin</a></li>
-                {% endif %}
-                <li>
-                    <form method="post" action="{% url 'logout' %}" class="app-nav__form">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-flat white-text app-nav__button">
-                            Logout
-                        </button>
-                    </form>
-                </li>
-            {% else %}
-                <li><a href="{% url 'login' %}">Login</a></li>
-                <li><a href="{% url 'register' %}">Register</a></li>
-            {% endif %}
-        </ul>
+        <div class="right hide-on-med-and-down app-nav__links"><a href="{% url 'listed_businesses' %}">Businesses</a><a href="{% url 'product_list' %}">Products</a><a href="{% url 'all_users' %}">Users</a><a href="{% url 'country_list' %}">Countries</a>{% if user.is_authenticated %}{% if user.businesses.count < 3 %}<a href="{% url 'add_business' %}" class="app-nav__cta">Add Business</a>{% endif %}<a href="{% url 'user_profile' user.username %}">{{ user.get_full_name|default:user.username }}</a>{% if user.is_superuser %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}<form method="post" action="{% url 'logout' %}" class="app-nav__form">{% csrf_token %}<button type="submit" class="btn-flat white-text app-nav__button">Logout</button></form>{% else %}<a href="{% url 'login' %}">Login</a><a href="{% url 'register' %}">Register</a>{% endif %}</div>
     </div>
 </nav>
 
-<ul class="sidenav" id="mobile-nav">
-    <li class="app-mobile-nav__intro">
-        <span class="app-mobile-nav__eyebrow">Directory</span>
-        <strong>Move quickly between businesses, people, and locations.</strong>
-    </li>
-    <li><a href="{% url 'listed_businesses' %}">Businesses</a></li>
-    <li><a href="{% url 'all_users' %}">Users</a></li>
-    <li><a href="{% url 'country_list' %}">Countries</a></li>
-
-    {% if user.is_authenticated %}
-        {% if user.businesses.count < 3 %}
-            <li><a href="{% url 'add_business' %}">Add Business</a></li>
-        {% endif %}
-        <li><a href="{% url 'user_profile' user.username %}">
-            {{ user.get_full_name|default:user.username }}
-        </a></li>
-        {% if user.is_superuser %}
-            <li><a href="{% url 'admin:index' %}">Admin</a></li>
-        {% endif %}
-        <li>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn-flat app-mobile-nav__button">
-                    Logout
-                </button>
-            </form>
-        </li>
-    {% else %}
-        <li><a href="{% url 'login' %}">Login</a></li>
-        <li><a href="{% url 'register' %}">Register</a></li>
-    {% endif %}
-</ul>
+<div class="sidenav app-mobile-nav" id="mobile-nav"><div class="app-mobile-nav__intro"><span class="app-mobile-nav__eyebrow">Directory</span><strong>Move quickly between businesses, people, and locations.</strong></div><a href="{% url 'listed_businesses' %}">Businesses</a><a href="{% url 'product_list' %}">Products</a><a href="{% url 'all_users' %}">Users</a><a href="{% url 'country_list' %}">Countries</a>{% if user.is_authenticated %}{% if user.businesses.count < 3 %}<a href="{% url 'add_business' %}">Add Business</a>{% endif %}<a href="{% url 'user_profile' user.username %}">{{ user.get_full_name|default:user.username }}</a>{% if user.is_superuser %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="btn-flat app-mobile-nav__button">Logout</button></form>{% else %}<a href="{% url 'login' %}">Login</a><a href="{% url 'register' %}">Register</a>{% endif %}</div>

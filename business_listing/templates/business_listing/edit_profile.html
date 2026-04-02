@@ -17,13 +17,13 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="input-field">
-                    <textarea id="about_me" name="about_me" class="materialize-textarea">{{ profile.about_me }}</textarea>
+                    <textarea id="about_me" name="about_me" required class="materialize-textarea">{{ profile.about_me }}</textarea>
                     <label for="about_me">About Me</label>
                     <span class="helper-text">Describe your background, specialties, or what visitors should know first.</span>
                 </div>
 
                 <div class="input-field">
-                    <select id="country" name="country">
+                    <select id="country" name="country" required>
                         <option value="" {% if not profile.country %}selected{% endif %}>Choose a country</option>
                         {% for value, label in country_choices %}
                             <option value="{{ value }}" {% if profile.country == value %}selected{% endif %}>{{ label }}</option>
@@ -35,21 +35,27 @@
 
                 <div class="row">
                     <div class="input-field col s12 m6">
-                        <input id="city" name="city" maxlength="100" value="{{ profile.city }}">
+                        <input id="city" name="city" maxlength="100" required value="{{ profile.city }}">
                         <label for="city">City</label>
                         <span class="helper-text">Use the city name visitors would expect to search for.</span>
                     </div>
                     <div class="input-field col s12 m6">
-                        <input id="postal_code" name="postal_code" maxlength="20" value="{{ profile.postal_code }}">
+                        <input id="postal_code" name="postal_code" maxlength="20" required value="{{ profile.postal_code }}">
                         <label for="postal_code">Postal Code</label>
-                        <span class="helper-text">Optional, but useful for local discovery.</span>
+                        <span class="helper-text">Required for local discovery.</span>
                     </div>
                 </div>
 
                 <div class="input-field">
-                    <input id="post_office_box" name="post_office_box" type="number" min="1" step="1" value="{{ profile.post_office_box }}">
+                    <input id="post_office_box" name="post_office_box" type="number" min="1" step="1" required value="{{ profile.post_office_box }}">
                     <label for="post_office_box">Post Office Box</label>
-                    <span class="helper-text">Numbers only. Leave empty if you do not use one.</span>
+                    <span class="helper-text">Numbers only.</span>
+                </div>
+
+                <div class="input-field">
+                    <input id="tags" name="tags" maxlength="255" required value="{{ profile.tags }}">
+                    <label for="tags">Tags</label>
+                    <span class="helper-text">Add comma-separated tags (for example: consultant, mentor, entrepreneur).</span>
                 </div>
 
                 <div class="form-actions">

@@ -3,10 +3,9 @@ from ..models import BusinessDetails
 
 def business_categories(request):
     query = request.GET.get('q', '').strip().lower()
-    all_choices = dict(BusinessDetails.CATEGORY_CHOICES)
     used_keys = BusinessDetails.objects.values_list('category', flat=True).distinct()
     categories = [
-        {'key': key, 'label': all_choices.get(key, key)}
+        {'key': key, 'label': key}
         for key in used_keys
     ]
     if query:

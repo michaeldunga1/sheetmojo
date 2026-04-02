@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load tag_helpers %}
 
 {% block title %}{{ business.business_name }}{% endblock %}
 
@@ -8,18 +9,38 @@
         <div class="card-content">
             <h3 class="detail-title">{{ business.business_name }}</h3>
             <p class="support-copy">{{ business.category }}{% if business.short_description %} · {{ business.short_description }}{% endif %}</p>
+            {% if user.is_authenticated and user == business.created_by %}
+                <div class="detail-actions">
+                    {% if business.products.count < 10 %}
+                    <a href="{% url 'add_product' business.slug %}" class="btn waves-effect waves-light">Add Product</a>
+                    {% else %}
+                    <span class="grey-text text-darken-1">Maximum of 10 products reached.</span>
+                    {% endif %}
+                    <a href="{% url 'edit_business' business.slug %}" class="btn-flat">Edit Business</a>
+                    <form method="post" action="{% url 'delete_business' business.slug %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this business?');">Delete Business</button>
+                    </form>
+                </div>
+            {% endif %}
             <div class="detail-panel__meta">
-                <p><strong>Category:</strong> <a href="{% url 'businesses_by_category' business.category %}">{{ business.category }}</a></p>
+                <p>
+                    <strong>Category:</strong> <a href="{% url 'businesses_by_category' business.category %}">{{ business.category }}</a>
+                    | <a href="{% url 'product_list' %}?q={{ business.category|urlencode }}">Similar Products</a>
+                    | <a href="{% url 'all_users' %}?q={{ business.category|urlencode }}">Similar Users</a>
+                </p>
                 <p><strong>Country:</strong>
                     <a href="{% url 'businesses_by_country' business.country %}">{{ business.country.name }} ({{ business.country.code }})</a>
                     | <a href="{% url 'users_by_country' business.country %}">Users</a>
                     | <a href="{% url 'businesses_by_country' business.country %}">Businesses</a>
+                    | <a href="{% url 'product_list' %}?q={{ business.country.name|urlencode }}">Products</a>
                 </p>
                 <p><strong>City:</strong>
                     {% if business.city and business.country %}
                         <a href="{% url 'businesses_by_city_name' business.country business.city %}">{{ business.city }}</a>
                         | <a href="{% url 'users_by_city_name' business.country business.city %}">Users</a>
                         | <a href="{% url 'businesses_by_city_name' business.country business.city %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ business.city|urlencode }}">Products</a>
                     {% elif business.city %}{{ business.city }}{% else %}—{% endif %}
                 </p>
                 <p><strong>Postal Code:</strong>
@@ -27,6 +48,7 @@
                         <a href="{% url 'businesses_by_postal_code' business.country business.postal_code %}">{{ business.postal_code }}</a>
                         | <a href="{% url 'users_by_postal_code' business.country business.postal_code %}">Users</a>
                         | <a href="{% url 'businesses_by_postal_code' business.country business.postal_code %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ business.postal_code|urlencode }}">Products</a>
                     {% elif business.postal_code %}{{ business.postal_code }}{% else %}—{% endif %}
                 </p>
                 <p><strong>Post Office Box:</strong>
@@ -34,19 +56,80 @@
                         <a href="{% url 'businesses_by_pobox' business.country business.postal_code business.post_office_box %}">{{ business.post_office_box }}</a>
                         | <a href="{% url 'users_by_post_office_box' business.country business.postal_code business.post_office_box %}">Users</a>
                         | <a href="{% url 'businesses_by_pobox' business.country business.postal_code business.post_office_box %}">Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ business.post_office_box|urlencode }}">Products</a>
                     {% elif business.post_office_box %}{{ business.post_office_box }}{% else %}—{% endif %}
                 </p>
+                <p>
+                    <strong>Tags:</strong>
+                    {% with business.tags|split_tags as business_tags %}
+                        {% if business_tags %}
+                            {% for tag in business_tags %}
+                                <a href="{% url 'businesses_by_tag' tag %}">{{ tag }}</a>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    {% endwith %}
+                </p>
                 {% if business.long_description %}
-                    <p><strong>Long Description:</strong> {{ business.long_description }}</p>
+                    <p>
+                        <strong>Long Description:</strong> {{ business.long_description }}
+                        | <a href="{% url 'product_list' %}?q={{ business.long_description|truncatewords:6|urlencode }}">Similar Products</a>
+                        | <a href="{% url 'listed_businesses' %}?q={{ business.long_description|truncatewords:6|urlencode }}">Similar Businesses</a>
+                        | <a href="{% url 'all_users' %}?q={{ business.long_description|truncatewords:6|urlencode }}">Similar Users</a>
+                    </p>
                 {% endif %}
                 <p><strong>Created By:</strong>
                     {% if business.created_by %}
                         <a href="{% url 'user_profile' business.created_by.username %}">{{ business.created_by.get_full_name|default:business.created_by.username }}</a>
+                        | <a href="{% url 'all_users' %}?q={{ business.created_by.username|urlencode }}">Similar Users</a>
+                        | <a href="{% url 'listed_businesses' %}?q={{ business.created_by.username|urlencode }}">Similar Businesses</a>
+                        | <a href="{% url 'product_list' %}?q={{ business.created_by.username|urlencode }}">Similar Products</a>
                     {% else %}—{% endif %}
                 </p>
-                <p><strong>Created On:</strong> {{ business.created_on|date:'Y-m-d H:i' }}</p>
-                <p><strong>Last Updated:</strong> {{ business.updated_on|date:'Y-m-d H:i' }}</p>
+                <p><strong>Created On:</strong> {{ business.created_on|date:'M d, Y g:i A' }}</p>
+                <p><strong>Last Updated:</strong> {{ business.updated_on|date:'M d, Y g:i A' }}</p>
             </div>
+
+            <div class="divider detail-divider"></div>
+            <h4 class="detail-subtitle">Products</h4>
+            <p class="support-copy"><a href="{% url 'product_list' %}?q={{ business.business_name|urlencode }}">Browse all product listings</a> or review the products attached to this business below.</p>
+            {% if business.products.all %}
+                <div class="row">
+                    {% for product in business.products.all %}
+                        <div class="col s12 m6">
+                            <div class="card medium product-card">
+                                {% if product.product_image %}
+                                    <div class="card-image">
+                                        <img src="{{ product.product_image.url }}" alt="{{ product.product_name }}" loading="lazy" decoding="async">
+                                    </div>
+                                {% endif %}
+                                <div class="card-content">
+                                    <span class="card-title"><a href="{% url 'product_detail' product.slug %}">{{ product.product_name }}</a></span>
+                                    <p><strong>Category:</strong> <a href="{% url 'products_by_category' product.product_category %}">{{ product.product_category }}</a></p>
+                                    <p><strong>Price:</strong> {{ product.currency }} {{ product.price }}</p>
+                                    <p><strong>Terms:</strong> {{ product.get_terms_of_sale_display }}</p>
+                                    {% if product.product_description %}
+                                        <p>{{ product.product_description }}</p>
+                                    {% endif %}
+                                    <p class="grey-text text-darken-1"><small>Posted {{ product.posted_on|date:'M d, Y g:i A' }} · Updated {{ product.updated_on|date:'M d, Y g:i A' }}</small></p>
+                                </div>
+                                {% if user.is_authenticated and user == business.created_by %}
+                                    <div class="card-action">
+                                        <a href="{% url 'edit_product' business.slug product.slug %}">Edit</a>
+                                        <form method="post" action="{% url 'delete_product' business.slug product.slug %}" class="inline-form">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this product?');">Delete</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="support-copy">No products have been added for this business yet.</p>
+            {% endif %}
         </div>
     </div>
 </div>

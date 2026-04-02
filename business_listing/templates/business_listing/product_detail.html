@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load tag_helpers %}
+
+{% block title %}{{ product.product_name }}{% endblock %}
+
+{% block content %}
+<div class="detail-shell">
+    <div class="card detail-panel">
+        <div class="card-content">
+            <p class="support-copy"><a href="{% url 'product_list' %}">All Products</a> / <a href="{% url 'business_details' product.business.slug %}">{{ product.business.business_name }}</a></p>
+            <h3 class="detail-title">{{ product.product_name }}</h3>
+            <p class="support-copy"><a href="{% url 'products_by_category' product.product_category %}">{{ product.product_category }}</a> · {{ product.currency }} {{ product.price }}</p>
+
+            {% if product.product_image %}
+                <div class="product-detail-image-wrap">
+                    <img src="{{ product.product_image.url }}" alt="{{ product.product_name }}" class="responsive-img product-detail-image" loading="lazy" decoding="async">
+                </div>
+            {% endif %}
+
+            <div class="detail-panel__meta">
+                <p>
+                    <strong>Business:</strong> <a href="{% url 'business_details' product.business.slug %}">{{ product.business.business_name }}</a>
+                    | <a href="{% url 'product_list' %}?q={{ product.business.business_name|urlencode }}">Similar Products</a>
+                    | <a href="{% url 'listed_businesses' %}?q={{ product.business.business_name|urlencode }}">Similar Businesses</a>
+                    {% if product.business.created_by %}
+                    | <a href="{% url 'user_profile' product.business.created_by.username %}">Business Owner</a>
+                    {% endif %}
+                </p>
+                <p>
+                    <strong>Product Category:</strong> <a href="{% url 'products_by_category' product.product_category %}">{{ product.product_category }}</a>
+                    | <a href="{% url 'product_list' %}?filter_category={{ product.product_category|urlencode }}">Similar Products</a>
+                    | <a href="{% url 'businesses_by_category' product.business.category %}">Similar Businesses</a>
+                </p>
+                <p>
+                    <strong>Price:</strong> {{ product.currency }} {{ product.price }}
+                    | <a href="{% url 'product_list' %}?filter_currency={{ product.currency }}&min_price={{ product.price }}&max_price={{ product.price }}">Same Price Products</a>
+                </p>
+                <p>
+                    <strong>Terms of Sale:</strong> {{ product.get_terms_of_sale_display }}
+                    | <a href="{% url 'product_list' %}?q={{ product.get_terms_of_sale_display|urlencode }}">Similar Products</a>
+                </p>
+                {% if product.product_description %}
+                    <p><strong>Description:</strong> {{ product.product_description }}</p>
+                {% endif %}
+                <p>
+                    <strong>Tags:</strong>
+                    {% with product.tags|split_tags as product_tags %}
+                        {% if product_tags %}
+                            {% for tag in product_tags %}
+                                <a href="{% url 'products_by_tag' tag %}">{{ tag }}</a>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    {% endwith %}
+                </p>
+                <p>
+                    <strong>Location:</strong> {{ product.business.city|default:'—' }}{% if product.business.country %}, {{ product.business.country.name }} ({{ product.business.country.code }}){% endif %}
+                    {% if product.business.country %}
+                    | <a href="{% url 'products_by_category' product.product_category %}?q={{ product.business.country.name|urlencode }}">Products in Country</a>
+                    | <a href="{% url 'businesses_by_country' product.business.country %}">Businesses in Country</a>
+                    | <a href="{% url 'users_by_country' product.business.country %}">Users in Country</a>
+                    {% if product.business.city %}
+                    | <a href="{% url 'businesses_by_city_name' product.business.country product.business.city %}">Businesses in City</a>
+                    | <a href="{% url 'users_by_city_name' product.business.country product.business.city %}">Users in City</a>
+                    {% endif %}
+                    {% endif %}
+                </p>
+                <p><strong>Posted On:</strong> {{ product.posted_on|date:'M d, Y g:i A' }}</p>
+                <p><strong>Last Updated:</strong> {{ product.updated_on|date:'M d, Y g:i A' }}</p>
+            </div>
+
+            {% if user.is_authenticated and user == product.business.created_by %}
+                <div class="detail-actions stack-top-xl">
+                    {% if product.business.products.count < 10 %}
+                    <a href="{% url 'add_product' product.business.slug %}" class="btn-flat">Add Product</a>
+                    {% endif %}
+                    <a href="{% url 'edit_product' product.business.slug product.slug %}" class="btn waves-effect waves-light">Edit Product</a>
+                    <form method="post" action="{% url 'delete_product' product.business.slug product.slug %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this product?');">Delete</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            <div class="section-block">
+                <h4 class="detail-subtitle">Related Products</h4>
+                {% if related_products %}
+                <div class="row related-products-grid">
+                    {% for related in related_products %}
+                    <div class="col s12 m6 l4">
+                        <div class="card-panel related-product-card">
+                            {% if related.product_thumbnail %}
+                            <img src="{{ related.product_thumbnail.url }}" alt="{{ related.product_name }}" class="responsive-img product-list-thumb" loading="lazy" decoding="async">
+                            {% elif related.product_image %}
+                            <img src="{{ related.product_image.url }}" alt="{{ related.product_name }}" class="responsive-img product-list-thumb" loading="lazy" decoding="async">
+                            {% endif %}
+                            <a href="{% url 'product_detail' related.slug %}"><strong>{{ related.product_name }}</strong></a>
+                            <p class="grey-text">{{ related.currency }} {{ related.price }} · <a href="{% url 'products_by_category' related.product_category %}">{{ related.product_category }}</a></p>
+                            <p class="grey-text">Business: <a href="{% url 'business_details' related.business.slug %}">{{ related.business.business_name }}</a></p>
+                            {% if related.product_description %}
+                            <p class="grey-text list-desc">{{ related.product_description|truncatewords:12 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="support-copy">No related products found yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

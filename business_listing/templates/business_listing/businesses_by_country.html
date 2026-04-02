@@ -3,7 +3,16 @@
 {% block title %}Businesses in {{ country_name }} ({{ country_code }}){% endblock %}
 
 {% block content %}
-<h3>Businesses in {{ country_name }} ({{ country_code }})</h3>
+<div class="row valign-wrapper">
+    <div class="col s12 m8">
+        <h3>Businesses in {{ country_name }} ({{ country_code }})</h3>
+    </div>
+    {% if user.is_authenticated and user.businesses.count < 3 %}
+    <div class="col s12 m4 right-align">
+        <a href="{% url 'add_business' %}" class="btn waves-effect waves-light">+ Add Business</a>
+    </div>
+    {% endif %}
+</div>
 {% include 'business_listing/list_search.html' %}
 {% include 'business_listing/view_toggle.html' %}
 <ul class="{% if request.GET.view == 'grid' %}row list-grid{% else %}collection z-depth-1{% endif %} list-with-top-gap">
@@ -13,6 +22,15 @@
             <a href="{% url 'business_details' business.slug %}"><strong>{{ business.business_name }}</strong></a>
             {% if business.short_description %}
                 <p class="grey-text list-desc">{{ business.short_description }}</p>
+            {% endif %}
+            {% if user.is_authenticated and user == business.created_by %}
+                <div class="card-action no-padding-top">
+                    <a href="{% url 'edit_business' business.slug %}">Edit</a>
+                    <form method="post" action="{% url 'delete_business' business.slug %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this business?');">Delete</button>
+                    </form>
+                </div>
             {% endif %}
             {% if request.GET.view == 'grid' %}</div>{% endif %}
         </li>

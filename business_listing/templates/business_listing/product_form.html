@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if edit_mode %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-shell">
+    <div class="card form-panel">
+        <div class="card-content">
+            <h3 class="form-title">{% if edit_mode %}Edit Product{% else %}Add Product{% endif %}</h3>
+            <p class="support-copy">This product will appear under <strong>{{ business.business_name }}</strong>. Add enough detail for customers to understand what is being sold and under what terms.</p>
+
+            {% if form.non_field_errors %}
+                <div class="card-panel red lighten-4 red-text text-darken-4">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="col s12">
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        {{ form.product_name }}
+                        <label for="{{ form.product_name.id_for_label }}">{{ form.product_name.label }}</label>
+                        {% if form.product_name.errors %}<span class="helper-text red-text">{{ form.product_name.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.product_name.help_text }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="file-field input-field col s12">
+                        <div class="btn">
+                            <span>Image</span>
+                            {{ form.product_image }}
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path validate" type="text" placeholder="Upload a product image">
+                        </div>
+                        {% if form.product_image.errors %}<span class="helper-text red-text">{{ form.product_image.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.product_image.help_text }}</span>{% endif %}
+                        {% if edit_mode and product.product_image %}
+                            <p class="helper-text">Current image: <a href="{{ product.product_image.url }}" target="_blank" rel="noopener">view uploaded image</a></p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        {{ form.product_category }}
+                        <label for="{{ form.product_category.id_for_label }}">{{ form.product_category.label }}</label>
+                        {% if form.product_category.errors %}<span class="helper-text red-text">{{ form.product_category.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.product_category.help_text }}</span>{% endif %}
+                    </div>
+                    <div class="input-field col s12 m6">
+                        {{ form.tags }}
+                        <label for="{{ form.tags.id_for_label }}">{{ form.tags.label }}</label>
+                        {% if form.tags.errors %}<span class="helper-text red-text">{{ form.tags.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.tags.help_text }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        {{ form.price }}
+                        <label for="{{ form.price.id_for_label }}">{{ form.price.label }}</label>
+                        {% if form.price.errors %}<span class="helper-text red-text">{{ form.price.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.price.help_text }}</span>{% endif %}
+                    </div>
+                    <div class="input-field col s12 m6">
+                        {{ form.currency }}
+                        <label for="{{ form.currency.id_for_label }}">{{ form.currency.label }}</label>
+                        {% if form.currency.errors %}<span class="helper-text red-text">{{ form.currency.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.currency.help_text }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        {{ form.terms_of_sale }}
+                        <label for="{{ form.terms_of_sale.id_for_label }}">{{ form.terms_of_sale.label }}</label>
+                        {% if form.terms_of_sale.errors %}<span class="helper-text red-text">{{ form.terms_of_sale.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.terms_of_sale.help_text }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        {{ form.product_description }}
+                        <label for="{{ form.product_description.id_for_label }}">{{ form.product_description.label }}</label>
+                        {% if form.product_description.errors %}<span class="helper-text red-text">{{ form.product_description.errors|join:', ' }}</span>{% else %}<span class="helper-text">{{ form.product_description.help_text }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn waves-effect waves-light btn-full stack-top-lg">{% if edit_mode %}Save Product{% else %}Add Product{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        M.FormSelect.init(document.querySelectorAll('select'));
+        M.updateTextFields();
+        M.textareaAutoResize(document.getElementById('{{ form.product_description.id_for_label }}'));
+    });
+</script>
+{% endblock %}

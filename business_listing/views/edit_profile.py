@@ -14,22 +14,40 @@ def edit_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     profile, _ = UserProfile.objects.get_or_create(user=profile_user)
     if request.method == 'POST':
-        profile.about_me = request.POST.get('about_me', '').strip()
-        profile.country = request.POST.get('country', '').strip().upper() or None
-        profile.city = request.POST.get('city', '').strip()
-        profile.postal_code = request.POST.get('postal_code', '').strip()
-        pobox = request.POST.get('post_office_box', '')
-        try:
-            profile.post_office_box = int(pobox) if pobox else None
-        except (ValueError, TypeError):
-            messages.error(request, 'Post office box must be a whole number.')
-            profile.post_office_box = None
+        about_me = request.POST.get('about_me', '').strip()
+        country = request.POST.get('country', '').strip().upper()
+        city = request.POST.get('city', '').strip()
+        postal_code = request.POST.get('postal_code', '').strip()
+        pobox = request.POST.get('post_office_box', '').strip()
+        tags = request.POST.get('tags', '').strip()
+
+        if not all([about_me, country, city, postal_code, pobox, tags]):
+            messages.error(request, 'All fields are required.')
             context = {
                 'profile': profile,
                 'profile_user': profile_user,
                 'country_choices': list(countries),
             }
             return render(request, 'business_listing/edit_profile.html', context)
+
+        try:
+            profile.post_office_box = int(pobox)
+            if profile.post_office_box < 1:
+                raise ValueError()
+        except (ValueError, TypeError):
+            messages.error(request, 'Post office box must be a positive whole number.')
+            context = {
+                'profile': profile,
+                'profile_user': profile_user,
+                'country_choices': list(countries),
+            }
+            return render(request, 'business_listing/edit_profile.html', context)
+
+        profile.about_me = about_me
+        profile.country = country
+        profile.city = city
+        profile.postal_code = postal_code
+        profile.tags = tags
         profile.save()
         messages.success(request, 'Your profile has been updated.')
         return redirect('user_profile', username=username)

@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}All Users{% endblock %}
+{% block title %}{{ page_title|default:'All Users' }}{% endblock %}
 
 {% block content %}
-<h4>All Users <span class="grey-text">({{ users|length }})</span></h4>
+<h4>{{ page_title|default:'All Users' }} <span class="grey-text">({{ users|length }})</span></h4>
 {% include 'business_listing/list_search.html' %}
 
 {% if users %}

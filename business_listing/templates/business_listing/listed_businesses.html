@@ -39,6 +39,15 @@
                 {% if business.short_description %}
                     <p class="grey-text list-desc">{{ business.short_description }}</p>
                 {% endif %}
+                {% if user.is_authenticated and user == business.created_by %}
+                    <div class="card-action no-padding-top">
+                        <a href="{% url 'edit_business' business.slug %}">Edit</a>
+                        <form method="post" action="{% url 'delete_business' business.slug %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-flat red-text text-darken-2" onclick="return confirm('Delete this business?');">Delete</button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
         </li>
     {% empty %}

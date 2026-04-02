@@ -1,0 +1,10 @@
+from django import template
+
+register = template.Library()
+
+
+@register.filter
+def split_tags(value):
+    if not value:
+        return []
+    return [item.strip() for item in str(value).split(',') if item.strip()]
