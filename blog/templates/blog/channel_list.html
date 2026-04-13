@@ -1,0 +1,100 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1 class="title is-3">
+  <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
+  <span>Channels</span>
+</h1>
+<p>
+  <a class="button is-primary" href="{% url 'blog:channel-create' %}">
+    <span class="icon"><i class="fa-solid fa-circle-plus"></i></span>
+    <span>Create channel</span>
+  </a>
+</p>
+
+{% for channel in channels %}
+  <div class="card">
+    <div class="card-content">
+      <h3 class="title is-5 mb-2">
+        <a href="{% url 'blog:channel-detail' channel.slug %}">{{ channel.name }}</a>
+      </h3>
+      {% if channel.intro %}
+        <p class="mb-2 has-text-weight-semibold">{{ channel.intro }}</p>
+      {% endif %}
+      {% if channel.description %}
+        <p class="mb-2">{{ channel.description }}</p>
+      {% endif %}
+      <p class="meta-text mb-3">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>Owner: <a href="{% url 'blog:user-profile' channel.owner.username %}">{{ channel.owner }}</a> |
+        <span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Created {{ channel.created_at }} |
+        <span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ channel.follower_count }} follower{{ channel.follower_count|pluralize }}
+      </p>
+      <div class="inline-actions">
+        <a class="button is-light" href="{% url 'blog:channel-detail' channel.slug %}">
+          <span class="icon"><i class="fa-solid fa-circle-info"></i></span>
+          <span>Details</span>
+        </a>
+        <a class="button is-link is-light" href="{% url 'blog:post-list' channel.slug %}">
+          <span class="icon"><i class="fa-solid fa-list"></i></span>
+          <span>View posts</span>
+        </a>
+        {% if channel.owner != user %}
+          {% if channel.id in followed_channel_ids %}
+            <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" style="display: inline-block;">
+              {% csrf_token %}
+              <button class="button is-info is-light" type="submit" aria-label="Unfollow" title="Unfollow">
+                <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" style="display: inline-block;">
+              {% csrf_token %}
+              <button class="button is-info" type="submit" aria-label="Follow" title="Follow">
+                <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+        {% if channel.owner == user %}
+          <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}">
+            <span class="icon"><i class="fa-solid fa-pen"></i></span>
+            <span>Edit</span>
+          </a>
+          <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}">
+            <span class="icon"><i class="fa-solid fa-trash"></i></span>
+            <span>Delete</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% empty %}
+  <div class="notification is-light"><span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>No channels yet.</div>
+{% endfor %}
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <ul class="pagination-list">
+      {% for num in paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+        {% else %}
+          <li><a class="pagination-link" aria-label="Goto page {{ num }}" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </nav>
+{% endif %}
+{% endblock %}

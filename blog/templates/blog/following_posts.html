@@ -1,0 +1,63 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1 class="title is-3">
+  <span class="icon mr-2"><i class="fa-solid fa-user-check"></i></span>
+  <span>Posts from Followed Channels and Your Posts</span>
+</h1>
+
+{% for post in posts %}
+  <div class="card">
+    <div class="card-content">
+      <h3 class="title is-5 mb-2"><a href="{% url 'blog:post-detail' post.pk %}">{{ post.title }}</a></h3>
+      <p class="mb-2">{{ post.body }}</p>
+      <p class="meta-text mb-3">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}">{{ post.author }}</a> |
+        <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}">{{ post.channel.name }}</a> |
+        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
+      </p>
+      <div class="inline-actions">
+        <a class="button is-link is-light" href="{% url 'blog:post-list' post.channel.slug %}">
+          <span class="icon"><i class="fa-solid fa-list"></i></span>
+          <span>Open channel posts</span>
+        </a>
+        <a class="button is-info is-light" href="{% url 'blog:comment-create' post.pk %}">
+          <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
+          <span>Add comment</span>
+        </a>
+      </div>
+    </div>
+  </div>
+{% empty %}
+  <div class="notification is-light">
+    <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>
+    No posts to show yet from your followed channels or your own posts.
+  </div>
+{% endfor %}
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <ul class="pagination-list">
+      {% for num in paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+        {% else %}
+          <li><a class="pagination-link" aria-label="Goto page {{ num }}" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </nav>
+{% endif %}
+{% endblock %}

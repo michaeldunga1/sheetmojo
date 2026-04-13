@@ -1,0 +1,73 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1 class="title is-3">
+  <span class="icon mr-2"><i class="fa-solid fa-id-card"></i></span>
+  <span>{% if is_own_profile %}My Profile{% else %}User Profile{% endif %}</span>
+</h1>
+
+<div class="card mb-4">
+  <div class="card-content">
+    <h2 class="title is-5 mb-2">{{ profile_user.username }}</h2>
+    <p class="meta-text mb-2">
+      <span class="icon mr-1"><i class="fa-solid fa-envelope"></i></span>
+      {% if profile_user.email %}
+        {{ profile_user.email }}
+      {% else %}
+        Email not set
+      {% endif %}
+    </p>
+    <p class="meta-text mb-2">
+      <span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>
+      Joined {{ profile_user.date_joined }}
+    </p>
+    <p class="meta-text">
+      <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>{{ user_channel_count }} channel{{ user_channel_count|pluralize }} |
+      <span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ user_post_count }} post{{ user_post_count|pluralize }}
+    </p>
+    {% if profile_obj %}
+      <p class="meta-text mt-2">
+        <span class="icon mr-1"><i class="fa-solid fa-earth-africa"></i></span>{{ profile_obj.city }}{% if profile_obj.city and profile_obj.country %}, {% endif %}{{ profile_obj.country }}
+      </p>
+      {% if profile_obj.about_me %}
+        <p class="mt-2">{{ profile_obj.about_me }}</p>
+      {% endif %}
+    {% endif %}
+    {% if is_own_profile %}
+      <div class="inline-actions mt-3">
+        <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}">
+          <span class="icon"><i class="fa-solid fa-user-pen"></i></span>
+          <span>Edit profile</span>
+        </a>
+        <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}">
+          <span class="icon"><i class="fa-solid fa-user-xmark"></i></span>
+          <span>Delete account</span>
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<h2 class="title is-5">
+  <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
+  <span>{% if is_own_profile %}My Posts{% else %}Posts by {{ profile_user.username }}{% endif %}</span>
+</h2>
+
+{% for post in user_posts %}
+  <div class="card mb-3">
+    <div class="card-content">
+      <h3 class="title is-6 mb-1"><a href="{% url 'blog:post-detail' post.pk %}">{{ post.title }}</a></h3>
+      <p class="meta-text mb-2">
+        <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}">{{ post.channel.name }}</a> |
+        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
+      </p>
+      <p>{{ post.body|truncatechars:180 }}</p>
+    </div>
+  </div>
+{% empty %}
+  <div class="notification is-light">
+    <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>
+    {% if is_own_profile %}You have not posted anything yet.{% else %}This user has not posted anything yet.{% endif %}
+  </div>
+{% endfor %}
+{% endblock %}

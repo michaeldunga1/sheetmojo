@@ -1,0 +1,106 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1 class="title is-3">
+  <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
+  <span>Posts in <a href="{% url 'blog:channel-detail' channel.slug %}">{{ channel.name }}</a></span>
+</h1>
+<p class="inline-actions">
+  <a class="button is-primary" href="{% url 'blog:post-create' channel.slug %}">
+    <span class="icon"><i class="fa-solid fa-square-plus"></i></span>
+    <span>Create post</span>
+  </a>
+  <a class="button is-light" href="{% url 'blog:channel-list' %}">
+    <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+    <span>Back to channels</span>
+  </a>
+</p>
+
+{% for post in posts %}
+  <div class="card">
+    <div class="card-content">
+      <h3 class="title is-5 mb-2"><a href="{% url 'blog:post-detail' post.pk %}">{{ post.title }}</a></h3>
+      <p class="mb-2">{{ post.body }}</p>
+      <p class="meta-text mb-3">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>By <a href="{% url 'blog:user-profile' post.author.username %}">{{ post.author }}</a> at
+        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
+      </p>
+
+      <p class="inline-actions">
+        {% if post.author == user %}
+          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.pk %}">
+            <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
+            <span>Edit post</span>
+          </a>
+          <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.pk %}">
+            <span class="icon"><i class="fa-solid fa-trash"></i></span>
+            <span>Delete post</span>
+          </a>
+        {% endif %}
+        <a class="button is-link is-light" href="{% url 'blog:comment-create' post.pk %}">
+          <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
+          <span>Add comment</span>
+        </a>
+      </p>
+
+      <h4 class="title is-6 mt-4">
+        <span class="icon mr-2"><i class="fa-solid fa-comments"></i></span>
+        <span>Comments</span>
+      </h4>
+      {% for comment in post.comments.all %}
+        <div class="card">
+          <div class="card-content">
+            <p class="mb-2">{{ comment.body }}</p>
+            <p class="meta-text mb-2">
+              <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>By <a href="{% url 'blog:user-profile' comment.author.username %}">{{ comment.author }}</a> at
+              <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ comment.created_at }}
+            </p>
+            {% if comment.author == user %}
+              <div class="inline-actions">
+                <a class="button is-small is-warning is-light" href="{% url 'blog:comment-edit' comment.pk %}">
+                  <span class="icon"><i class="fa-solid fa-pen"></i></span>
+                  <span>Edit</span>
+                </a>
+                <a class="button is-small is-danger is-light" href="{% url 'blog:comment-delete' comment.pk %}">
+                  <span class="icon"><i class="fa-solid fa-trash"></i></span>
+                  <span>Delete</span>
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="notification is-light"><span class="icon mr-2"><i class="fa-regular fa-message"></i></span>No comments yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+{% empty %}
+  <div class="notification is-light"><span class="icon mr-2"><i class="fa-regular fa-newspaper"></i></span>No posts yet.</div>
+{% endfor %}
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <ul class="pagination-list">
+      {% for num in paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+        {% else %}
+          <li><a class="pagination-link" aria-label="Goto page {{ num }}" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </nav>
+{% endif %}
+{% endblock %}

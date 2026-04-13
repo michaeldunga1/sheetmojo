@@ -1,0 +1,51 @@
+from django.urls import path
+
+from .views import (
+    AccountDeleteView,
+    ChannelCreateView,
+    ChannelDetailView,
+    ChannelDeleteView,
+    FollowChannelView,
+    FollowingPostListView,
+    ChannelListView,
+    ChannelUpdateView,
+    CommentCreateView,
+    CommentDeleteView,
+    CommentUpdateView,
+    PostCreateView,
+    PostDetailView,
+    PostDeleteView,
+    PostListView,
+    PostUpdateView,
+    PublicUserProfileView,
+    SignUpView,
+    UserProfileEditView,
+    UserProfileView,
+    UnfollowChannelView,
+)
+
+app_name = "blog"
+
+urlpatterns = [
+    path("register/", SignUpView.as_view(), name="register"),
+    path("profile/", UserProfileView.as_view(), name="profile"),
+    path("profile/edit/", UserProfileEditView.as_view(), name="profile-edit"),
+    path("account/delete/", AccountDeleteView.as_view(), name="account-delete"),
+    path("users/<str:username>/", PublicUserProfileView.as_view(), name="user-profile"),
+    path("channels/", ChannelListView.as_view(), name="channel-list"),
+    path("channels/<slug:channel_slug>/follow/", FollowChannelView.as_view(), name="channel-follow"),
+    path("channels/<slug:channel_slug>/unfollow/", UnfollowChannelView.as_view(), name="channel-unfollow"),
+    path("channels/create/", ChannelCreateView.as_view(), name="channel-create"),
+    path("channels/<slug:channel_slug>/", ChannelDetailView.as_view(), name="channel-detail"),
+    path("channels/<slug:slug>/edit/", ChannelUpdateView.as_view(), name="channel-edit"),
+    path("channels/<slug:slug>/delete/", ChannelDeleteView.as_view(), name="channel-delete"),
+    path("following/posts/", FollowingPostListView.as_view(), name="following-posts"),
+    path("channels/<slug:channel_slug>/posts/", PostListView.as_view(), name="post-list"),
+    path("channels/<slug:channel_slug>/posts/create/", PostCreateView.as_view(), name="post-create"),
+    path("posts/<int:pk>/", PostDetailView.as_view(), name="post-detail"),
+    path("posts/<int:pk>/edit/", PostUpdateView.as_view(), name="post-edit"),
+    path("posts/<int:pk>/delete/", PostDeleteView.as_view(), name="post-delete"),
+    path("posts/<int:post_pk>/comments/create/", CommentCreateView.as_view(), name="comment-create"),
+    path("comments/<int:pk>/edit/", CommentUpdateView.as_view(), name="comment-edit"),
+    path("comments/<int:pk>/delete/", CommentDeleteView.as_view(), name="comment-delete"),
+]

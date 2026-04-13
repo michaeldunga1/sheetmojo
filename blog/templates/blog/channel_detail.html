@@ -1,0 +1,89 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1 class="title is-3">
+  <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
+  <span>{{ channel.name }}</span>
+</h1>
+
+<div class="card mb-4">
+  <div class="card-content">
+    {% if channel.intro %}
+      <p class="is-size-5 mb-2">{{ channel.intro }}</p>
+    {% endif %}
+    {% if channel.description %}
+      <p class="mb-3">{{ channel.description }}</p>
+    {% endif %}
+
+    <p class="meta-text mb-3">
+      <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>Owner: <a href="{% url 'blog:user-profile' channel.owner.username %}">{{ channel.owner }}</a> |
+      <span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ channel.follower_count }} follower{{ channel.follower_count|pluralize }} |
+      <span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Created {{ channel.created_at }}
+    </p>
+
+    <div class="inline-actions">
+      <a class="button is-link" href="{% url 'blog:post-list' channel.slug %}">
+        <span class="icon"><i class="fa-solid fa-list"></i></span>
+        <span>View all posts</span>
+      </a>
+      <a class="button is-light" href="{% url 'blog:channel-list' %}">
+        <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+        <span>Back to channels</span>
+      </a>
+
+      {% if channel.owner != user %}
+        {% if is_following %}
+          <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" style="display: inline-block;">
+            {% csrf_token %}
+            <button class="button is-info is-light" type="submit">
+              <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
+              <span>Unfollow</span>
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" style="display: inline-block;">
+            {% csrf_token %}
+            <button class="button is-info" type="submit">
+              <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
+              <span>Follow</span>
+            </button>
+          </form>
+        {% endif %}
+      {% endif %}
+
+      {% if channel.owner == user %}
+        <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}">
+          <span class="icon"><i class="fa-solid fa-pen"></i></span>
+          <span>Edit</span>
+        </a>
+        <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}">
+          <span class="icon"><i class="fa-solid fa-trash"></i></span>
+          <span>Delete</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<h2 class="title is-5">
+  <span class="icon mr-2"><i class="fa-solid fa-clock-rotate-left"></i></span>
+  <span>Recent posts</span>
+</h2>
+
+{% for post in recent_posts %}
+  <div class="card mb-3">
+    <div class="card-content">
+      <h3 class="title is-6 mb-1"><a href="{% url 'blog:post-detail' post.pk %}">{{ post.title }}</a></h3>
+      <p class="meta-text mb-2">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}">{{ post.author }}</a> |
+        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
+      </p>
+      <p>{{ post.body|truncatechars:180 }}</p>
+    </div>
+  </div>
+{% empty %}
+  <div class="notification is-light">
+    <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>No posts yet in this channel.
+  </div>
+{% endfor %}
+{% endblock %}

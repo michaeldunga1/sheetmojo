@@ -1,0 +1,44 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h1 class="title is-3"><span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span><span>Post</span></h1>
+<div class="form-wrap box">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="notification is-danger is-light">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+    {% for field in form %}
+      <div class="field">
+        <label class="label" for="{{ field.id_for_label }}">
+          <span class="icon mr-2">
+            {% if field.name == 'title' %}
+              <i class="fa-solid fa-heading"></i>
+            {% elif field.name == 'body' %}
+              <i class="fa-solid fa-align-left"></i>
+            {% elif field.name == 'image' %}
+              <i class="fa-solid fa-image"></i>
+            {% else %}
+              <i class="fa-solid fa-circle-dot"></i>
+            {% endif %}
+          </span>
+          <span>{{ field.label }}</span>
+        </label>
+        <div class="control">{{ field }}</div>
+        {% if field.help_text %}
+          <p class="help is-info"><span class="icon mr-1"><i class="fa-solid fa-circle-info"></i></span>{{ field.help_text|safe }}</p>
+        {% endif %}
+        {% if field.errors %}
+          <p class="help is-danger">{{ field.errors|striptags }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <button class="button is-primary" type="submit">
+      <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
+      <span>Save</span>
+    </button>
+  </form>
+</div>
+{% endblock %}
