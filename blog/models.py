@@ -106,6 +106,15 @@ class Post(models.Model):
 	def __str__(self):
 		return self.title
 
+	@property
+	def image_exists(self):
+		if not self.image:
+			return False
+		try:
+			return self.image.storage.exists(self.image.name)
+		except Exception:
+			return False
+
 	def get_absolute_url(self):
 		return reverse(
 			"blog:post-detail",

@@ -36,9 +36,11 @@
       document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
     })();
   </script>
-  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVeGyB2BrSYN15qeb8mTVk0G6DLnoKTpao6fs957nfoDDA7g7zlO7e" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
   <script>
-    htmx.config.scrollIntoViewOnBoost = false;
+    if (window.htmx) {
+      htmx.config.scrollIntoViewOnBoost = false;
+    }
   </script>
   <style>
     :root {

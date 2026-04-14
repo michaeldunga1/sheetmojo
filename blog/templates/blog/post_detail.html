@@ -25,7 +25,7 @@
       "publisher": {
         "@type": "Organization",
         "name": "SheetMojo"
-      }{% if post.image %},
+      }{% if post.image_exists %},
       "image": "{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}"
       {% endif %}
     }
@@ -79,8 +79,8 @@
 </header>
 
 <div class="card">
-  <div class="card-content post-detail-layout{% if post.image %} has-media{% endif %}">
-    {% if post.image %}
+  <div class="card-content post-detail-layout{% if post.image_exists %} has-media{% endif %}">
+    {% if post.image_exists %}
       <div class="post-detail-media">
         <figure class="image mb-3 post-image">
           <img src="{{ post.image.url }}" alt="Image for {{ post.title }}">
