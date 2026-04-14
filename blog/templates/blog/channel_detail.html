@@ -134,19 +134,19 @@
     <div class="card-content post-card">
       <div class="post-card-body">
         {% if post.image %}
-          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true" aria-label="{{ post.title }}">
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" aria-label="{{ post.title }}">
             <img src="{{ post.image.url }}" alt="{{ post.title }}">
           </a>
         {% endif %}
         <p class="post-kicker">Recent</p>
-        <h3 class="title is-5 mb-1"><a class="has-text-dark" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">{{ post.title }}</a></h3>
+        <h3 class="title is-5 mb-1"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">{{ post.title }}</a></h3>
         <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:30 }}</div>
         <p class="meta-text mb-2">
           <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a>
           <span class="mx-2">&middot;</span>
           <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
         </p>
-        <a class="button is-light" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">
+        <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
           <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
           <span>Read article</span>
         </a>

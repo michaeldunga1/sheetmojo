@@ -48,7 +48,7 @@ class ChannelListView(LoginRequiredMixin, ListView):
 		return (
 			Channel.objects.select_related("owner")
 			.annotate(follower_count=Count("followers"))
-			.order_by("-created_at", "-id")
+			.order_by("-follower_count", "-created_at", "-id")
 		)
 
 	def get_context_data(self, **kwargs):
@@ -279,9 +279,15 @@ class PostDetailView(DetailView):
 	model = Post
 	template_name = "blog/post_detail.html"
 	context_object_name = "post"
+	slug_field = "slug"
+	slug_url_kwarg = "post_slug"
 
 	def get_queryset(self):
-		return Post.objects.select_related("channel", "author").prefetch_related("comments__author")
+		return (
+			Post.objects.select_related("channel", "author")
+			.prefetch_related("comments__author")
+			.filter(channel__slug=self.kwargs["channel_slug"])
+		)
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
@@ -320,6 +326,11 @@ class PostUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
 	model = Post
 	form_class = PostForm
 	template_name = "blog/post_form.html"
+	slug_field = "slug"
+	slug_url_kwarg = "post_slug"
+
+	def get_queryset(self):
+		return Post.objects.filter(channel__slug=self.kwargs["channel_slug"])
 
 	def get_success_url(self):
 		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.object.channel.slug})
@@ -328,6 +339,11 @@ class PostUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
 class PostDeleteView(LoginRequiredMixin, AuthorRequiredMixin, DeleteView):
 	model = Post
 	template_name = "blog/post_confirm_delete.html"
+	slug_field = "slug"
+	slug_url_kwarg = "post_slug"
+
+	def get_queryset(self):
+		return Post.objects.filter(channel__slug=self.kwargs["channel_slug"])
 
 	def get_success_url(self):
 		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.object.channel.slug})
@@ -339,7 +355,11 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 	template_name = "blog/comment_form.html"
 
 	def dispatch(self, request, *args, **kwargs):
-		self.post_obj = get_object_or_404(Post, pk=self.kwargs["post_pk"])
+		self.post_obj = get_object_or_404(
+			Post,
+			channel__slug=self.kwargs["channel_slug"],
+			slug=self.kwargs["post_slug"],
+		)
 		return super().dispatch(request, *args, **kwargs)
 
 	def get_form_kwargs(self):
@@ -365,7 +385,10 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 			return self.form_invalid(form)
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-detail", kwargs={"pk": self.post_obj.pk})
+		return reverse_lazy(
+			"blog:post-detail",
+			kwargs={"channel_slug": self.post_obj.channel.slug, "post_slug": self.post_obj.slug},
+		)
 
 
 class CommentUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
@@ -374,7 +397,10 @@ class CommentUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
 	template_name = "blog/comment_form.html"
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-detail", kwargs={"pk": self.object.post.pk})
+		return reverse_lazy(
+			"blog:post-detail",
+			kwargs={"channel_slug": self.object.post.channel.slug, "post_slug": self.object.post.slug},
+		)
 
 
 class CommentDeleteView(LoginRequiredMixin, AuthorRequiredMixin, DeleteView):
@@ -382,4 +408,7 @@ class CommentDeleteView(LoginRequiredMixin, AuthorRequiredMixin, DeleteView):
 	template_name = "blog/comment_confirm_delete.html"
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-detail", kwargs={"pk": self.object.post.pk})
+		return reverse_lazy(
+			"blog:post-detail",
+			kwargs={"channel_slug": self.object.post.channel.slug, "post_slug": self.object.post.slug},
+		)

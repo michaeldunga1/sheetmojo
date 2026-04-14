@@ -69,7 +69,10 @@ class BlogViewAccessTests(TestCase):
 		self.client.login(username="bob2", password="password123")
 
 		response = self.client.post(
-			reverse("blog:comment-create", kwargs={"post_pk": self.post.pk}),
+			reverse(
+				"blog:comment-create",
+				kwargs={"channel_slug": self.post.channel.slug, "post_slug": self.post.slug},
+			),
 			{"body": "Nice post"},
 		)
 
@@ -91,7 +94,10 @@ class BlogViewAccessTests(TestCase):
 		Comment.objects.create(post=self.post, author=self.other_user, body="First comment")
 
 		response = self.client.post(
-			reverse("blog:comment-create", kwargs={"post_pk": self.post.pk}),
+			reverse(
+				"blog:comment-create",
+				kwargs={"channel_slug": self.post.channel.slug, "post_slug": self.post.slug},
+			),
 			{"body": "Second comment"},
 		)
 
@@ -177,7 +183,12 @@ class BlogViewAccessTests(TestCase):
 	def test_post_detail_page_loads(self):
 		self.client.login(username="bob2", password="password123")
 
-		response = self.client.get(reverse("blog:post-detail", kwargs={"pk": self.post.pk}))
+		response = self.client.get(
+			reverse(
+				"blog:post-detail",
+				kwargs={"channel_slug": self.post.channel.slug, "post_slug": self.post.slug},
+			)
+		)
 
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, self.post.title)

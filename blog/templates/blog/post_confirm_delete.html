@@ -15,7 +15,7 @@
       <span class="icon"><i class="fa-solid fa-trash"></i></span>
       <span>Confirm delete</span>
     </button>
-    <a class="button is-light" href="{% url 'blog:post-detail' object.pk %}" hx-boost="true">
+    <a class="button is-light" href="{% url 'blog:post-detail' object.channel.slug object.slug %}" hx-boost="true">
       <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
       <span>Cancel</span>
     </a>

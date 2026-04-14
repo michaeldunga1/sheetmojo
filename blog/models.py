@@ -92,18 +92,25 @@ class Post(models.Model):
 	channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name="posts")
 	author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
 	title = models.CharField(max_length=200)
+	slug = models.SlugField(max_length=200)
 	body = models.TextField()
 	image = models.ImageField(upload_to="post_images/", blank=True, null=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["channel", "slug"], name="unique_post_slug_per_channel"),
+		]
 		ordering = ["-created_at"]
 
 	def __str__(self):
 		return self.title
 
 	def get_absolute_url(self):
-		return reverse("blog:post-detail", kwargs={"pk": self.pk})
+		return reverse(
+			"blog:post-detail",
+			kwargs={"channel_slug": self.channel.slug, "post_slug": self.slug},
+		)
 
 	def clean(self):
 		super().clean()
@@ -113,6 +120,14 @@ class Post(models.Model):
 				raise ValidationError({"channel": "A channel can have a maximum of 100 posts."})
 
 	def save(self, *args, **kwargs):
+		if not self.slug:
+			base_slug = slugify(self.title) or "post"
+			slug = base_slug
+			counter = 1
+			while Post.objects.filter(channel=self.channel, slug=slug).exclude(pk=self.pk).exists():
+				slug = f"{base_slug}-{counter}"
+				counter += 1
+			self.slug = slug
 		self.full_clean()
 		return super().save(*args, **kwargs)
 

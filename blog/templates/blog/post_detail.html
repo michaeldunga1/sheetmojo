@@ -114,11 +114,11 @@
           <span>More from this channel</span>
         </a>
         {% if post.author == user %}
-          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.pk %}" hx-boost="true">
+          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.channel.slug post.slug %}" hx-boost="true">
             <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
             <span>Edit post</span>
           </a>
-          <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.pk %}" hx-boost="true">
+          <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.channel.slug post.slug %}" hx-boost="true">
             <span class="icon"><i class="fa-solid fa-trash"></i></span>
             <span>Delete post</span>
           </a>
@@ -140,7 +140,7 @@
         <span>Edit comment</span>
       </a>
     {% else %}
-      <a class="button is-primary" href="{% url 'blog:comment-create' post.pk %}" hx-boost="true">
+      <a class="button is-primary" href="{% url 'blog:comment-create' post.channel.slug post.slug %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
         <span>Add comment</span>
       </a>

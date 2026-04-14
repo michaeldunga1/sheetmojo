@@ -6,12 +6,12 @@
     <div class="card-content post-card">
       <div class="post-card-body">
         {% if post.image %}
-          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true" aria-label="{{ post.title }}">
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" aria-label="{{ post.title }}">
             <img src="{{ post.image.url }}" alt="{{ post.title }}">
           </a>
         {% endif %}
         <p class="post-kicker">From your network</p>
-        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">{{ post.title }}</a></h3>
+        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">{{ post.title }}</a></h3>
         <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:36 }}</div>
         <p class="meta-text mb-3">
           <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a>
@@ -25,11 +25,11 @@
             <span class="icon"><i class="fa-solid fa-list"></i></span>
             <span>Open channel posts</span>
           </a>
-          <a class="button is-info is-light" href="{% url 'blog:comment-create' post.pk %}" hx-boost="true">
+          <a class="button is-info is-light" href="{% url 'blog:comment-create' post.channel.slug post.slug %}" hx-boost="true">
             <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
             <span>Add comment</span>
           </a>
-          <a class="button is-light" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">
+          <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
             <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
             <span>Read article</span>
           </a>

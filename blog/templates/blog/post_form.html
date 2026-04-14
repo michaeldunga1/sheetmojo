@@ -44,7 +44,7 @@
         <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
         <span>Publish changes</span>
       </button>
-      <a class="button is-light" href="{% if form.instance.pk %}{% url 'blog:post-detail' form.instance.pk %}{% else %}{% url 'blog:channel-list' %}{% endif %}" hx-boost="true">
+      <a class="button is-light" href="{% if form.instance.pk %}{% url 'blog:post-detail' form.instance.channel.slug form.instance.slug %}{% else %}{% url 'blog:channel-list' %}{% endif %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
         <span>Cancel</span>
       </a>
