@@ -252,29 +252,22 @@
       min-width: 0;
     }
     .post-detail-media {
-      float: left;
-      width: clamp(220px, 40vw, 430px);
-      max-width: 52%;
-      margin: 0 1rem 0.8rem 0;
+      float: none;
+      width: 100%;
+      max-width: none;
+      margin: 0 0 1rem 0;
       min-width: 0;
     }
     .post-image img {
       border-radius: 12px;
       object-fit: contain;
       background: var(--brand-bg-b);
-      max-height: min(68vh, 620px);
       width: 100%;
       border: 1px solid var(--brand-line);
     }
     @media (max-width: 900px) {
       .post-detail-media {
-        float: none;
-        width: 100%;
-        max-width: none;
         margin: 0 0 0.95rem 0;
-      }
-      .post-detail-layout.has-media .post-image img {
-        max-height: min(56vh, 500px);
       }
     }
     .meta-pill {
