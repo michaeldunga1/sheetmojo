@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth import logout
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.db.models import Count
@@ -9,10 +8,11 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
-from .forms import ChannelForm, CommentForm, PostForm, ProfileEditForm, UserEditForm
+from .forms import ChannelForm, CommentForm, PostForm, ProfileEditForm, SignUpForm, UserEditForm
 from .models import Channel, ChannelFollow, Comment, Post, Profile
 
 User = get_user_model()
@@ -23,7 +23,7 @@ def home_redirect(request):
 
 
 class SignUpView(CreateView):
-	form_class = UserCreationForm
+	form_class = SignUpForm
 	template_name = "registration/register.html"
 	success_url = reverse_lazy("login")
 
@@ -48,7 +48,7 @@ class ChannelListView(LoginRequiredMixin, ListView):
 		return (
 			Channel.objects.select_related("owner")
 			.annotate(follower_count=Count("followers"))
-			.order_by("-follower_count", "-created_at")
+			.order_by("-created_at", "-id")
 		)
 
 	def get_context_data(self, **kwargs):
@@ -57,6 +57,19 @@ class ChannelListView(LoginRequiredMixin, ListView):
 			ChannelFollow.objects.filter(follower=self.request.user).values_list("channel_id", flat=True)
 		)
 		context["followed_channel_ids"] = followed_channel_ids
+		return context
+
+
+class MyChannelListView(ChannelListView):
+	template_name = "blog/channel_list.html"
+
+	def get_queryset(self):
+		return super().get_queryset().filter(owner=self.request.user)
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		context["page_title"] = "My Channels"
+		context["page_kicker"] = "Publications you own and manage."
 		return context
 
 
@@ -190,6 +203,13 @@ class FollowChannelView(LoginRequiredMixin, View):
 		channel = get_object_or_404(Channel, slug=channel_slug)
 		if channel.owner != request.user:
 			ChannelFollow.objects.get_or_create(follower=request.user, channel=channel)
+		next_url = request.POST.get("next", "")
+		if next_url and url_has_allowed_host_and_scheme(
+			next_url,
+			allowed_hosts={request.get_host()},
+			require_https=request.is_secure(),
+		):
+			return redirect(next_url)
 		return redirect("blog:channel-list")
 
 
@@ -197,6 +217,13 @@ class UnfollowChannelView(LoginRequiredMixin, View):
 	def post(self, request, channel_slug):
 		channel = get_object_or_404(Channel, slug=channel_slug)
 		ChannelFollow.objects.filter(follower=request.user, channel=channel).delete()
+		next_url = request.POST.get("next", "")
+		if next_url and url_has_allowed_host_and_scheme(
+			next_url,
+			allowed_hosts={request.get_host()},
+			require_https=request.is_secure(),
+		):
+			return redirect(next_url)
 		return redirect("blog:channel-list")
 
 
@@ -248,13 +275,27 @@ class PostListView(LoginRequiredMixin, ListView):
 		return context
 
 
-class PostDetailView(LoginRequiredMixin, DetailView):
+class PostDetailView(DetailView):
 	model = Post
 	template_name = "blog/post_detail.html"
 	context_object_name = "post"
 
 	def get_queryset(self):
 		return Post.objects.select_related("channel", "author").prefetch_related("comments__author")
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		post = self.object
+		user = self.request.user
+		if user.is_authenticated:
+			user_comment = post.comments.filter(author=user).first()
+			other_comments = post.comments.exclude(author=user).order_by("-created_at")
+		else:
+			user_comment = None
+			other_comments = post.comments.order_by("-created_at")
+		context["user_comment"] = user_comment
+		context["other_comments"] = other_comments
+		return context
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -324,7 +365,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 			return self.form_invalid(form)
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.post_obj.channel.slug})
+		return reverse_lazy("blog:post-detail", kwargs={"pk": self.post_obj.pk})
 
 
 class CommentUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
@@ -333,7 +374,7 @@ class CommentUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
 	template_name = "blog/comment_form.html"
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.object.post.channel.slug})
+		return reverse_lazy("blog:post-detail", kwargs={"pk": self.object.post.pk})
 
 
 class CommentDeleteView(LoginRequiredMixin, AuthorRequiredMixin, DeleteView):
@@ -341,4 +382,4 @@ class CommentDeleteView(LoginRequiredMixin, AuthorRequiredMixin, DeleteView):
 	template_name = "blog/comment_confirm_delete.html"
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.object.post.channel.slug})
+		return reverse_lazy("blog:post-detail", kwargs={"pk": self.object.post.pk})

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
 User = get_user_model()
@@ -37,6 +38,9 @@ class Channel(models.Model):
 
 	def __str__(self):
 		return f"{self.name} ({self.owner})"
+
+	def get_absolute_url(self):
+		return reverse("blog:channel-detail", kwargs={"channel_slug": self.slug})
 
 	def clean(self):
 		super().clean()
@@ -97,6 +101,9 @@ class Post(models.Model):
 
 	def __str__(self):
 		return self.title
+
+	def get_absolute_url(self):
+		return reverse("blog:post-detail", kwargs={"pk": self.pk})
 
 	def clean(self):
 		super().clean()

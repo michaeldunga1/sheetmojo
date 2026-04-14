@@ -1,13 +1,24 @@
 {% extends 'blog/base.html' %}
 
 {% block content %}
-<h1 class="title is-3"><span class="icon mr-2"><i class="fa-solid fa-trash"></i></span><span>Delete Post</span></h1>
-<div class="notification is-warning is-light"><span class="icon mr-2"><i class="fa-solid fa-triangle-exclamation"></i></span>Delete {{ object.title }}?</div>
-<form method="post">
-  {% csrf_token %}
-  <button class="button is-danger" type="submit">
-    <span class="icon"><i class="fa-solid fa-trash"></i></span>
-    <span>Confirm delete</span>
-  </button>
-</form>
+<header class="page-headline editor-shell">
+  <p class="post-kicker mb-2">Danger Zone</p>
+  <h1 class="title is-3 mb-2"><span class="icon mr-2"><i class="fa-solid fa-trash"></i></span><span>Delete Post</span></h1>
+  <p class="page-kicker">Removing this post will also remove related discussion context.</p>
+</header>
+
+<div class="editor-form-card editor-shell">
+  <div class="danger-panel mb-4"><span class="icon mr-2"><i class="fa-solid fa-triangle-exclamation"></i></span>Delete <strong>{{ object.title }}</strong>?</div>
+  <form method="post" class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
+    {% csrf_token %}
+    <button class="button is-danger" type="submit">
+      <span class="icon"><i class="fa-solid fa-trash"></i></span>
+      <span>Confirm delete</span>
+    </button>
+    <a class="button is-light" href="{% url 'blog:post-detail' object.pk %}" hx-boost="true">
+      <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+      <span>Cancel</span>
+    </a>
+  </form>
+</div>
 {% endblock %}

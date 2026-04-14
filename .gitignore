@@ -11,6 +11,8 @@ venv/
 # Django runtime artifacts
 db.sqlite3
 media/
+.env
+.env.*
 
 # OS/editor
 .DS_Store

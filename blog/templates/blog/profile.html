@@ -1,45 +1,56 @@
 {% extends 'blog/base.html' %}
+{% load markdown_extras %}
+
+{% block title %}{% if is_own_profile %}My Profile{% else %}{{ profile_user.username }}{% endif %} | SheetMojo{% endblock %}
+{% block meta_description %}Author details, account stats, and published stories.{% endblock %}
+{% block og_title %}{% if is_own_profile %}My Profile{% else %}{{ profile_user.username }}{% endif %} | SheetMojo{% endblock %}
+{% block og_description %}Author details, account stats, and published stories.{% endblock %}
+{% block twitter_title %}{% if is_own_profile %}My Profile{% else %}{{ profile_user.username }}{% endif %} | SheetMojo{% endblock %}
+{% block twitter_description %}Author details, account stats, and published stories.{% endblock %}
+{% block meta_robots %}noindex,nofollow{% endblock %}
 
 {% block content %}
-<h1 class="title is-3">
-  <span class="icon mr-2"><i class="fa-solid fa-id-card"></i></span>
-  <span>{% if is_own_profile %}My Profile{% else %}User Profile{% endif %}</span>
-</h1>
+<header class="page-headline">
+  <p class="post-kicker mb-2">Profile</p>
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-id-card"></i></span>
+    <span>{% if is_own_profile %}My Profile{% else %}{{ profile_user.username }}{% endif %}</span>
+  </h1>
+  <p class="page-kicker">Author details, account stats, and published stories.</p>
+</header>
 
 <div class="card mb-4">
   <div class="card-content">
-    <h2 class="title is-5 mb-2">{{ profile_user.username }}</h2>
-    <p class="meta-text mb-2">
-      <span class="icon mr-1"><i class="fa-solid fa-envelope"></i></span>
-      {% if profile_user.email %}
-        {{ profile_user.email }}
-      {% else %}
-        Email not set
-      {% endif %}
-    </p>
-    <p class="meta-text mb-2">
-      <span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>
-      Joined {{ profile_user.date_joined }}
-    </p>
-    <p class="meta-text">
-      <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>{{ user_channel_count }} channel{{ user_channel_count|pluralize }} |
-      <span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ user_post_count }} post{{ user_post_count|pluralize }}
-    </p>
+    <h2 class="title is-4 mb-2">{{ profile_user.username }}</h2>
+    <div class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
+      <span class="meta-pill">
+        <span class="icon mr-1"><i class="fa-solid fa-envelope"></i></span>
+        {% if profile_user.email %}
+          {{ profile_user.email }}
+        {% else %}
+          Email not set
+        {% endif %}
+      </span>
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Joined {{ profile_user.date_joined|date:"M j, Y" }}</span>
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>{{ user_channel_count }} channel{{ user_channel_count|pluralize }}</span>
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ user_post_count }} post{{ user_post_count|pluralize }}</span>
+    </div>
     {% if profile_obj %}
-      <p class="meta-text mt-2">
-        <span class="icon mr-1"><i class="fa-solid fa-earth-africa"></i></span>{{ profile_obj.city }}{% if profile_obj.city and profile_obj.country %}, {% endif %}{{ profile_obj.country }}
+      <p class="meta-text mb-2">
+        <span class="icon mr-1"><i class="fa-solid fa-earth-africa"></i></span>
+        {{ profile_obj.city }}{% if profile_obj.city and profile_obj.country %}, {% endif %}{{ profile_obj.country }}
       </p>
       {% if profile_obj.about_me %}
-        <p class="mt-2">{{ profile_obj.about_me }}</p>
+        <div class="post-body">{{ profile_obj.about_me }}</div>
       {% endif %}
     {% endif %}
     {% if is_own_profile %}
-      <div class="inline-actions mt-3">
-        <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}">
+      <div class="inline-actions mt-4 is-flex is-align-items-center is-flex-wrap-wrap">
+        <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}" hx-boost="true">
           <span class="icon"><i class="fa-solid fa-user-pen"></i></span>
           <span>Edit profile</span>
         </a>
-        <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}">
+        <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}" hx-boost="true">
           <span class="icon"><i class="fa-solid fa-user-xmark"></i></span>
           <span>Delete account</span>
         </a>
@@ -48,26 +59,41 @@
   </div>
 </div>
 
-<h2 class="title is-5">
+<h2 class="title is-5 comment-section-title">
   <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
   <span>{% if is_own_profile %}My Posts{% else %}Posts by {{ profile_user.username }}{% endif %}</span>
 </h2>
 
+<div class="post-stream">
 {% for post in user_posts %}
-  <div class="card mb-3">
-    <div class="card-content">
-      <h3 class="title is-6 mb-1"><a href="{% url 'blog:post-detail' post.pk %}">{{ post.title }}</a></h3>
-      <p class="meta-text mb-2">
-        <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}">{{ post.channel.name }}</a> |
-        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
-      </p>
-      <p>{{ post.body|truncatechars:180 }}</p>
+  <article class="card">
+    <div class="card-content post-card">
+      <div class="post-card-body">
+        {% if post.image %}
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true" aria-label="{{ post.title }}">
+            <img src="{{ post.image.url }}" alt="{{ post.title }}">
+          </a>
+        {% endif %}
+        <p class="post-kicker">Published</p>
+        <h3 class="title is-5 mb-1"><a class="has-text-dark" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">{{ post.title }}</a></h3>
+        <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:32 }}</div>
+        <p class="meta-text mb-2">
+          <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a>
+          <span class="mx-2">&middot;</span>
+          <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
+        </p>
+        <a class="button is-light" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">
+          <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
+          <span>Read article</span>
+        </a>
+      </div>
     </div>
-  </div>
+  </article>
 {% empty %}
   <div class="notification is-light">
     <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>
     {% if is_own_profile %}You have not posted anything yet.{% else %}This user has not posted anything yet.{% endif %}
   </div>
 {% endfor %}
+</div>
 {% endblock %}

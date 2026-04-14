@@ -1,8 +1,12 @@
 {% extends 'blog/base.html' %}
 
 {% block content %}
-<h1 class="title is-3"><span class="icon mr-2"><i class="fa-solid fa-comment"></i></span><span>Comment</span></h1>
-<div class="form-wrap box">
+<header class="page-headline editor-shell">
+  <p class="post-kicker mb-2">Editor</p>
+  <h1 class="title is-3 mb-2"><span class="icon mr-2"><i class="fa-solid fa-comment"></i></span><span>{% if form.instance.pk %}Edit Comment{% else %}Write Comment{% endif %}</span></h1>
+  <p class="page-kicker">Share a thoughtful response and keep the discussion constructive.</p>
+</header>
+<div class="editor-form-card editor-shell">
   <form method="post">
     {% csrf_token %}
     {% if form.non_field_errors %}
@@ -25,10 +29,16 @@
         {% endif %}
       </div>
     {% endfor %}
-    <button class="button is-primary" type="submit">
-      <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
-      <span>Save</span>
-    </button>
+    <div class="inline-actions mt-4 is-flex is-align-items-center is-flex-wrap-wrap">
+      <button class="button is-primary" type="submit">
+        <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
+        <span>Save comment</span>
+      </button>
+      <a class="button is-light" href="javascript:history.back()">
+        <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+        <span>Cancel</span>
+      </a>
+    </div>
   </form>
 </div>
 {% endblock %}

@@ -1,0 +1,5 @@
+Django==4.2.11
+Pillow>=10.0,<12.0
+Markdown>=3.6,<4.0
+# Needed if using MySQL (recommended on PythonAnywhere production)
+mysqlclient>=2.2,<3.0

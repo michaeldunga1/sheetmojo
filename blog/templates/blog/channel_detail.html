@@ -1,48 +1,106 @@
 {% extends 'blog/base.html' %}
+{% load markdown_extras %}
+
+{% block title %}{{ channel.name }} | Channels | SheetMojo{% endblock %}
+{% block meta_description %}{% if channel.intro %}{{ channel.intro }}{% else %}Discover posts and discussions in {{ channel.name }}.{% endif %}{% endblock %}
+{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ channel.get_absolute_url }}{% endblock %}
+{% block og_title %}{{ channel.name }} | SheetMojo{% endblock %}
+{% block og_description %}{% if channel.intro %}{{ channel.intro }}{% else %}Discover posts and discussions in {{ channel.name }}.{% endif %}{% endblock %}
+{% block twitter_title %}{{ channel.name }} | SheetMojo{% endblock %}
+{% block twitter_description %}{% if channel.intro %}{{ channel.intro }}{% else %}Discover posts and discussions in {{ channel.name }}.{% endif %}{% endblock %}
+{% block structured_data %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "{{ channel.name|escapejs }}",
+      "description": "{% if channel.intro %}{{ channel.intro|escapejs }}{% else %}Discover posts and discussions in {{ channel.name|escapejs }}.{% endif %}",
+      "url": "{{ request.scheme }}://{{ request.get_host }}{{ channel.get_absolute_url }}",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "SheetMojo"
+      }
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Channel Directory",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'blog:channel-list' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ channel.name|escapejs }}",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{{ channel.get_absolute_url }}"
+        }
+      ]
+    }
+  </script>
+{% endblock %}
 
 {% block content %}
-<h1 class="title is-3">
-  <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
-  <span>{{ channel.name }}</span>
-</h1>
+<header class="page-headline">
+  <p class="post-kicker mb-2">Channel</p>
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
+    <span>{{ channel.name }}</span>
+  </h1>
+  {% if channel.intro %}
+    <p class="page-kicker">{{ channel.intro }}</p>
+  {% endif %}
+  <div class="is-flex is-align-items-center is-flex-wrap-wrap">
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' channel.owner.username %}" hx-boost="true">{{ channel.owner }}</a></span>
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ channel.follower_count }} follower{{ channel.follower_count|pluralize }}</span>
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>{{ channel.created_at|date:"M j, Y" }}</span>
+  </div>
+</header>
 
 <div class="card mb-4">
   <div class="card-content">
-    {% if channel.intro %}
-      <p class="is-size-5 mb-2">{{ channel.intro }}</p>
-    {% endif %}
     {% if channel.description %}
-      <p class="mb-3">{{ channel.description }}</p>
+      <div class="post-body mb-4">{{ channel.description }}</div>
     {% endif %}
 
-    <p class="meta-text mb-3">
-      <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>Owner: <a href="{% url 'blog:user-profile' channel.owner.username %}">{{ channel.owner }}</a> |
-      <span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ channel.follower_count }} follower{{ channel.follower_count|pluralize }} |
-      <span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Created {{ channel.created_at }}
-    </p>
-
-    <div class="inline-actions">
-      <a class="button is-link" href="{% url 'blog:post-list' channel.slug %}">
+    <div class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
+      <a class="button is-link" href="{% url 'blog:post-list' channel.slug %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-list"></i></span>
-        <span>View all posts</span>
+        <span>Open posts</span>
       </a>
-      <a class="button is-light" href="{% url 'blog:channel-list' %}">
+      <a class="button is-primary" href="{% url 'blog:post-create' channel.slug %}" hx-boost="true">
+        <span class="icon"><i class="fa-solid fa-square-plus"></i></span>
+        <span>Write post</span>
+      </a>
+      <a class="button is-light" href="{% url 'blog:channel-list' %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
-        <span>Back to channels</span>
+        <span>All channels</span>
       </a>
 
       {% if channel.owner != user %}
         {% if is_following %}
-          <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" style="display: inline-block;">
+          <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" class="inline-form" hx-boost="true">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
             <button class="button is-info is-light" type="submit">
               <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
-              <span>Unfollow</span>
+              <span>Following</span>
             </button>
           </form>
         {% else %}
-          <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" style="display: inline-block;">
+          <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" class="inline-form" hx-boost="true">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
             <button class="button is-info" type="submit">
               <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
               <span>Follow</span>
@@ -52,11 +110,11 @@
       {% endif %}
 
       {% if channel.owner == user %}
-        <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}">
+        <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}" hx-boost="true">
           <span class="icon"><i class="fa-solid fa-pen"></i></span>
           <span>Edit</span>
         </a>
-        <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}">
+        <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}" hx-boost="true">
           <span class="icon"><i class="fa-solid fa-trash"></i></span>
           <span>Delete</span>
         </a>
@@ -65,25 +123,40 @@
   </div>
 </div>
 
-<h2 class="title is-5">
+<h2 class="title is-5 comment-section-title">
   <span class="icon mr-2"><i class="fa-solid fa-clock-rotate-left"></i></span>
   <span>Recent posts</span>
 </h2>
 
+<div class="post-stream">
 {% for post in recent_posts %}
-  <div class="card mb-3">
-    <div class="card-content">
-      <h3 class="title is-6 mb-1"><a href="{% url 'blog:post-detail' post.pk %}">{{ post.title }}</a></h3>
-      <p class="meta-text mb-2">
-        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}">{{ post.author }}</a> |
-        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
-      </p>
-      <p>{{ post.body|truncatechars:180 }}</p>
+  <article class="card">
+    <div class="card-content post-card">
+      <div class="post-card-body">
+        {% if post.image %}
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true" aria-label="{{ post.title }}">
+            <img src="{{ post.image.url }}" alt="{{ post.title }}">
+          </a>
+        {% endif %}
+        <p class="post-kicker">Recent</p>
+        <h3 class="title is-5 mb-1"><a class="has-text-dark" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">{{ post.title }}</a></h3>
+        <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:30 }}</div>
+        <p class="meta-text mb-2">
+          <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a>
+          <span class="mx-2">&middot;</span>
+          <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
+        </p>
+        <a class="button is-light" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">
+          <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
+          <span>Read article</span>
+        </a>
+      </div>
     </div>
-  </div>
+  </article>
 {% empty %}
   <div class="notification is-light">
     <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>No posts yet in this channel.
   </div>
 {% endfor %}
+</div>
 {% endblock %}

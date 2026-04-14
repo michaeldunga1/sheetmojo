@@ -10,22 +10,56 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def load_dotenv(dotenv_path: Path) -> None:
+    if not dotenv_path.exists():
+        return
+
+    for line in dotenv_path.read_text().splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#') or '=' not in stripped:
+            continue
+
+        key, value = stripped.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+load_dotenv(BASE_DIR / '.env')
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str, default: list[str] | None = None) -> list[str]:
+    value = os.getenv(name)
+    if value is None:
+        return default or []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&%d@3j6=m$outnqq(z*s7bl-9dep9mf@lf&&4(x4u+cgf2$3y2'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
+CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS', [])
 
 
 # Application definition
@@ -36,6 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.sitemaps',
     'django.contrib.staticfiles',
     'blog',
 ]
@@ -74,12 +109,29 @@ WSGI_APPLICATION = 'sheetmojo.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+db_engine = os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.sqlite3')
+
+if db_engine == 'django.db.backends.mysql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DJANGO_DB_NAME', ''),
+            'USER': os.getenv('DJANGO_DB_USER', ''),
+            'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', ''),
+            'HOST': os.getenv('DJANGO_DB_HOST', 'localhost'),
+            'PORT': os.getenv('DJANGO_DB_PORT', '3306'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DJANGO_DB_NAME', BASE_DIR / 'db.sqlite3'),
+        }
+    }
 
 
 # Password validation
@@ -117,8 +169,34 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+USE_X_FORWARDED_HOST = env_bool('DJANGO_USE_X_FORWARDED_HOST', False)
+
+AUTHENTICATION_BACKENDS = [
+    'blog.auth_backends.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = env_bool('DJANGO_SESSION_COOKIE_SECURE', True)
+    CSRF_COOKIE_SECURE = env_bool('DJANGO_CSRF_COOKIE_SECURE', True)
+    SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', False)
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '0'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+    SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', False)
 
 # Redirect users to the home feed after login/logout.
 LOGIN_REDIRECT_URL = '/'

@@ -1,0 +1,80 @@
+{% for channel in channels %}
+  <article class="card">
+    <div class="card-content">
+      <p class="meta-text mb-2">
+        <span class="icon mr-1"><i class="fa-solid fa-book-open"></i></span>
+        Channel
+      </p>
+      <h3 class="title is-4 mb-2">
+        <a class="has-text-dark" href="{% url 'blog:channel-detail' channel.slug %}" hx-boost="true">{{ channel.name }}</a>
+      </h3>
+      {% if channel.intro %}
+        <p class="mb-3 is-size-6">{{ channel.intro }}</p>
+      {% endif %}
+      <p class="meta-text mb-3">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>By <a href="{% url 'blog:user-profile' channel.owner.username %}" hx-boost="true">{{ channel.owner }}</a>
+        <span class="mx-2">&middot;</span>
+        <span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>{{ channel.created_at|date:"M j, Y" }}
+        <span class="mx-2">&middot;</span>
+        <span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ channel.follower_count }} follower{{ channel.follower_count|pluralize }}
+      </p>
+      <div class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
+        {% if channel.owner != user %}
+          {% if channel.id in followed_channel_ids %}
+            <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-info is-light" type="submit" aria-label="Unfollow" title="Unfollow">
+                <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
+                <span>Following</span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-info" type="submit" aria-label="Follow" title="Follow">
+                <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
+                <span>Follow</span>
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+        <a class="button is-light" href="{% url 'blog:channel-detail' channel.slug %}" hx-boost="true">
+          <span class="icon"><i class="fa-solid fa-arrow-right"></i></span>
+          <span>Open</span>
+        </a>
+        {% if channel.owner == user %}
+          <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-pen"></i></span>
+            <span>Edit</span>
+          </a>
+          <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-trash"></i></span>
+            <span>Delete</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </article>
+{% empty %}
+  <div class="notification is-light"><span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>No channels yet.</div>
+{% endfor %}
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <div class="pagination-list">{% for num in paginator.page_range %}{% if page_obj.number == num %}<span><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></span>{% else %}<span><a class="pagination-link" aria-label="Goto page {{ num }}" href="?page={{ num }}" hx-boost="true">{{ num }}</a></span>{% endif %}{% endfor %}</div>
+  </nav>
+{% endif %}

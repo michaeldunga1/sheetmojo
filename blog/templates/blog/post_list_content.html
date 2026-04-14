@@ -1,0 +1,65 @@
+{% load markdown_extras %}
+
+<div class="post-stream">
+{% for post in posts %}
+  <article class="card">
+    <div class="card-content post-card">
+      <div class="post-card-body">
+        {% if post.image %}
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true" aria-label="{{ post.title }}">
+            <img src="{{ post.image.url }}" alt="{{ post.title }}">
+          </a>
+        {% endif %}
+        <p class="post-kicker">Article</p>
+        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">{{ post.title }}</a></h3>
+        <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:40 }}</div>
+        <p class="meta-text mb-3">
+          <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>By <a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a>
+          <span class="mx-2">&middot;</span>
+          <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
+        </p>
+        <p class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
+          {% if post.author == user %}
+            <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.pk %}" hx-boost="true">
+              <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
+              <span>Edit post</span>
+            </a>
+            <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.pk %}" hx-boost="true">
+              <span class="icon"><i class="fa-solid fa-trash"></i></span>
+              <span>Delete post</span>
+            </a>
+          {% endif %}
+          <a class="button is-link is-light" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-comments"></i></span>
+            <span>Comments ({{ post.comments.count }})</span>
+          </a>
+          <a class="button is-light" href="{% url 'blog:post-detail' post.pk %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
+            <span>Read article</span>
+          </a>
+        </p>
+      </div>
+    </div>
+  </article>
+{% empty %}
+  <div class="notification is-light"><span class="icon mr-2"><i class="fa-regular fa-newspaper"></i></span>No posts yet.</div>
+{% endfor %}
+</div>
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <div class="pagination-list">{% for num in paginator.page_range %}{% if page_obj.number == num %}<span><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></span>{% else %}<span><a class="pagination-link" aria-label="Goto page {{ num }}" href="?page={{ num }}" hx-boost="true">{{ num }}</a></span>{% endif %}{% endfor %}</div>
+  </nav>
+{% endif %}

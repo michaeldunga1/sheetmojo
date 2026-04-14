@@ -1,82 +1,190 @@
 {% extends 'blog/base.html' %}
+{% load markdown_extras %}
+
+{% block title %}{{ post.title }} | SheetMojo{% endblock %}
+{% block meta_description %}{{ post.body|striptags|truncatechars:160 }}{% endblock %}
+{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ post.get_absolute_url }}{% endblock %}
+{% block og_title %}{{ post.title }} | SheetMojo{% endblock %}
+{% block og_description %}{{ post.body|striptags|truncatechars:180 }}{% endblock %}
+{% block twitter_title %}{{ post.title }} | SheetMojo{% endblock %}
+{% block twitter_description %}{{ post.body|striptags|truncatechars:180 }}{% endblock %}
+{% block structured_data %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "{{ post.title|escapejs }}",
+      "description": "{{ post.body|striptags|truncatechars:180|escapejs }}",
+      "datePublished": "{{ post.created_at|date:'c' }}",
+      "dateModified": "{{ post.created_at|date:'c' }}",
+      "mainEntityOfPage": "{{ request.scheme }}://{{ request.get_host }}{{ post.get_absolute_url }}",
+      "author": {
+        "@type": "Person",
+        "name": "{{ post.author.username|escapejs }}"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "SheetMojo"
+      }{% if post.image %},
+      "image": "{{ request.scheme }}://{{ request.get_host }}{{ post.image.url }}"
+      {% endif %}
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Channel Directory",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'blog:channel-list' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ post.channel.name|escapejs }}",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'blog:channel-detail' post.channel.slug %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "{{ post.title|escapejs }}",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{{ post.get_absolute_url }}"
+        }
+      ]
+    }
+  </script>
+{% endblock %}
 
 {% block content %}
-<h1 class="title is-3">
-  <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
-  <span>{{ post.title }}</span>
-</h1>
+<header class="page-headline">
+  <p class="post-kicker mb-2">Feature story</p>
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
+    <span>{{ post.title }}</span>
+  </h1>
+  <div class="is-flex is-align-items-center is-flex-wrap-wrap mt-2">
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a></span>
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a></span>
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}</span>
+  </div>
+</header>
 
 <div class="card">
-  <div class="card-content">
+  <div class="card-content post-detail-layout{% if post.image %} has-media{% endif %}">
     {% if post.image %}
-      <figure class="image mb-4">
-        <img src="{{ post.image.url }}" alt="Image for {{ post.title }}">
-      </figure>
+      <div class="post-detail-media">
+        <figure class="image mb-3 post-image">
+          <img src="{{ post.image.url }}" alt="Image for {{ post.title }}">
+        </figure>
+      </div>
     {% endif %}
 
-    <p class="mb-3">{{ post.body }}</p>
-    <p class="meta-text mb-3">
-      <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}">{{ post.author }}</a> |
-      <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}">{{ post.channel.name }}</a> |
-      <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at }}
-    </p>
+    <div class="post-detail-main">
+      <div class="post-body markdown-content mb-4">{{ post.body|markdownify }}</div>
+      {% with abs_url=request.scheme|add:"://"|add:request.get_host|add:post.get_absolute_url %}
+      <div class="share-links" aria-label="Share this post">
+        <span class="share-links-label">Share</span>
+        <a class="share-link" href="https://twitter.com/intent/tweet?url={{ abs_url|urlencode }}&text={{ post.title|urlencode }}" target="_blank" rel="noopener noreferrer" aria-label="Share on X" title="Share on X">
+          <i class="fa-brands fa-x-twitter"></i>
+        </a>
+        <a class="share-link" href="https://www.facebook.com/sharer/sharer.php?u={{ abs_url|urlencode }}" target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" title="Share on Facebook">
+          <i class="fa-brands fa-facebook-f"></i>
+        </a>
+        <a class="share-link" href="https://www.linkedin.com/sharing/share-offsite/?url={{ abs_url|urlencode }}" target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" title="Share on LinkedIn">
+          <i class="fa-brands fa-linkedin-in"></i>
+        </a>
+        <a class="share-link" href="mailto:?subject={{ post.title|urlencode }}&body={{ abs_url|urlencode }}" aria-label="Share by email" title="Share by email">
+          <i class="fa-solid fa-envelope"></i>
+        </a>
+      </div>
+      {% endwith %}
 
-    <div class="inline-actions">
-      <a class="button is-light" href="{% url 'blog:post-list' post.channel.slug %}">
-        <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
-        <span>Back to channel posts</span>
-      </a>
-      {% if post.author == user %}
-        <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.pk %}">
-          <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
-          <span>Edit post</span>
+      <div class="inline-actions">
+        <a class="button is-light" href="{% url 'blog:post-list' post.channel.slug %}" hx-boost="true">
+          <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+          <span>More from this channel</span>
         </a>
-        <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.pk %}">
-          <span class="icon"><i class="fa-solid fa-trash"></i></span>
-          <span>Delete post</span>
-        </a>
-      {% endif %}
+        {% if post.author == user %}
+          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.pk %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
+            <span>Edit post</span>
+          </a>
+          <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.pk %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-trash"></i></span>
+            <span>Delete post</span>
+          </a>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
 
-<h2 class="title is-5 mt-5">
-  <span class="icon mr-2"><i class="fa-solid fa-comments"></i></span>
-  <span>Comments</span>
-</h2>
+<div class="is-flex is-align-items-center is-justify-content-space-between mt-5 mb-3 comment-section-title">
+  <h2 class="title is-5 mb-0">
+    <span class="icon mr-2"><i class="fa-solid fa-comments"></i></span>
+    <span>Comments</span>
+  </h2>
+  {% if user.is_authenticated %}
+    {% if user_comment %}
+      <a class="button is-warning is-light" href="{% url 'blog:comment-edit' user_comment.pk %}" hx-boost="true">
+        <span class="icon"><i class="fa-solid fa-pen"></i></span>
+        <span>Edit comment</span>
+      </a>
+    {% else %}
+      <a class="button is-primary" href="{% url 'blog:comment-create' post.pk %}" hx-boost="true">
+        <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
+        <span>Add comment</span>
+      </a>
+    {% endif %}
+  {% else %}
+    <a class="button is-light" href="{% url 'login' %}?next={{ request.path }}" hx-boost="true">
+      <span class="icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+      <span>Log in to comment</span>
+    </a>
+  {% endif %}
+</div>
 
-{% for comment in post.comments.all %}
+{# User's own comment pinned at top of list #}
+{% if user_comment %}
+  <div class="card mb-3 card-pinned">
+    <div class="card-content">
+      <p class="mb-2 post-body">{{ user_comment.body }}</p>
+      <p class="meta-text">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' user_comment.author.username %}" hx-boost="true">{{ user_comment.author }}</a>
+        <span class="mx-2">&middot;</span>
+        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ user_comment.created_at|date:"M j, Y g:i A" }}
+        <span class="tag is-info is-light ml-2">Your comment</span>
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+{# All other comments #}
+{% for comment in other_comments %}
   <div class="card mb-3">
     <div class="card-content">
-      <p class="mb-2">{{ comment.body }}</p>
-      <p class="meta-text mb-2">
-        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' comment.author.username %}">{{ comment.author }}</a> |
-        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ comment.created_at }}
+      <p class="mb-2 post-body">{{ comment.body }}</p>
+      <p class="meta-text">
+        <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' comment.author.username %}" hx-boost="true">{{ comment.author }}</a>
+        <span class="mx-2">&middot;</span>
+        <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ comment.created_at|date:"M j, Y g:i A" }}
       </p>
-      {% if comment.author == user %}
-        <div class="inline-actions">
-          <a class="button is-small is-warning is-light" href="{% url 'blog:comment-edit' comment.pk %}">
-            <span class="icon"><i class="fa-solid fa-pen"></i></span>
-            <span>Edit</span>
-          </a>
-          <a class="button is-small is-danger is-light" href="{% url 'blog:comment-delete' comment.pk %}">
-            <span class="icon"><i class="fa-solid fa-trash"></i></span>
-            <span>Delete</span>
-          </a>
-        </div>
-      {% endif %}
     </div>
   </div>
 {% empty %}
-  <div class="notification is-light">
-    <span class="icon mr-2"><i class="fa-regular fa-message"></i></span>No comments yet.
-  </div>
+  {% if not user_comment %}
+    <div class="notification is-light">
+      <span class="icon mr-2"><i class="fa-regular fa-message"></i></span>No comments yet.
+    </div>
+  {% endif %}
 {% endfor %}
-
-<p>
-  <a class="button is-link is-light" href="{% url 'blog:comment-create' post.pk %}">
-    <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
-    <span>Add comment</span>
-  </a>
-</p>
 {% endblock %}
