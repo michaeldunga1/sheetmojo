@@ -227,3 +227,17 @@ The app now supports environment-based configuration:
 - `DJANGO_CSRF_TRUSTED_ORIGINS`
 - `DJANGO_DB_ENGINE`, `DJANGO_DB_NAME`, `DJANGO_DB_USER`, `DJANGO_DB_PASSWORD`, `DJANGO_DB_HOST`, `DJANGO_DB_PORT`
 - `DJANGO_SESSION_COOKIE_SECURE`, `DJANGO_CSRF_COOKIE_SECURE`, `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SECURE_HSTS_*`
+
+## 4. Dependency Compatibility Notes
+
+To avoid known resolver/runtime conflicts, keep these constraints unless you intentionally upgrade dependent packages too:
+
+- `Django>=4.2.20,<5.0` (compatible with `django-tailwind` 4.4.x)
+- `Pillow>=10.0,<11.0` (compatible with `moviepy` 2.1.x)
+
+After changing dependency pins, run:
+
+```bash
+pip install -r requirements.txt
+python -m pip check
+```
