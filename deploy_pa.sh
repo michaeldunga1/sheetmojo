@@ -31,6 +31,9 @@ pip install -r requirements.txt
 echo "[deploy] Running migrations"
 python manage.py migrate
 
+echo "[deploy] Ensuring media upload directory exists"
+mkdir -p media/post_images
+
 echo "[deploy] Collecting static files"
 python manage.py collectstatic --noinput
 
@@ -38,3 +41,4 @@ echo "[deploy] Running Django checks"
 python manage.py check
 
 echo "Done. Reload the web app from the PythonAnywhere Web tab."
+echo "Reminder: PythonAnywhere Web tab should map /media/ -> $PROJECT_DIR/media"

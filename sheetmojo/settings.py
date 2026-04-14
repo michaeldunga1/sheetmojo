@@ -173,6 +173,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Optional production fallback for user-uploaded files when front-end media
+# mapping is unavailable (for example, temporary PythonAnywhere misconfiguration).
+SERVE_MEDIA_FILES = env_bool('DJANGO_SERVE_MEDIA_FILES', False)
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
