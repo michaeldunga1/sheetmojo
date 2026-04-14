@@ -149,6 +149,74 @@ application = get_wsgi_application()
 1. Open `https://yourusername.pythonanywhere.com`.
 1. Check **Error log** if anything fails.
 
+### 2.8 GitHub -> PythonAnywhere deployment routine
+
+Use this routine whenever you push changes to GitHub and want to deploy on PythonAnywhere.
+
+#### First-time setup from GitHub
+
+```bash
+# In PythonAnywhere Bash console
+cd ~
+git clone https://github.com/<your-github-username>/sheetmojo.git
+cd sheetmojo
+
+mkvirtualenv --python=/usr/bin/python3.10 sheetmojo-env
+workon sheetmojo-env
+pip install -r requirements.txt
+
+# Then configure ~/sheetmojo/.env and Web tab settings as described above.
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+#### Repeat deployment after each GitHub push
+
+```bash
+# In PythonAnywhere Bash console
+workon sheetmojo-env
+cd ~/sheetmojo
+
+git fetch origin
+git checkout main
+git pull origin main
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+Then in the **PythonAnywhere Web tab**:
+
+1. Click **Reload**.
+1. Open your site and verify key pages.
+1. If needed, inspect **Error log** and **Server log**.
+
+Optional quick health check command:
+
+```bash
+workon sheetmojo-env
+cd ~/sheetmojo
+python manage.py check
+```
+
+#### Optional one-command deploy script
+
+This repo includes `deploy_pa.sh` to run the repeat deployment routine automatically:
+
+```bash
+cd ~/sheetmojo
+./deploy_pa.sh
+```
+
+Use a custom branch if needed:
+
+```bash
+./deploy_pa.sh main
+```
+
+After the script completes, click **Reload** in the PythonAnywhere **Web** tab.
+
 ## 3. Settings Summary
 
 The app now supports environment-based configuration:
