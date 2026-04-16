@@ -6,8 +6,9 @@ from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+from datetime import timedelta
 
-from .models import Channel, ChannelFollow, Comment, Notification, Post, Profile, SavedPost
+from .models import Channel, ChannelFollow, Comment, Notification, Post, Profile, SavedPost, Tag
 
 User = get_user_model()
 
@@ -346,6 +347,133 @@ class BlogViewAccessTests(TestCase):
 		self.assertIsNotNone(notification)
 		self.assertEqual(notification.notification_type, Notification.TYPE_NEW_POST)
 
+	def test_post_create_can_save_draft_without_notifying_followers(self):
+		self.client.login(username="bob2", password="password123")
+		ChannelFollow.objects.create(follower=self.other_user, channel=self.channel)
+		self.client.logout()
+		self.client.login(username="alice2", password="password123")
+
+		response = self.client.post(
+			reverse("blog:post-create", kwargs={"channel_slug": self.channel.slug}),
+			{"title": "Draft post", "body": "Draft body", "tags_input": "" , "action": "draft"},
+		)
+
+		self.assertRedirects(response, reverse("blog:draft-posts"))
+		draft = Post.objects.get(title="Draft post")
+		self.assertFalse(draft.is_published)
+		self.assertFalse(
+			Notification.objects.filter(
+				recipient=self.other_user,
+				actor=self.user,
+				notification_type=Notification.TYPE_NEW_POST,
+				target_url=draft.get_absolute_url(),
+			).exists()
+		)
+
+	def test_non_owner_cannot_view_draft_post(self):
+		draft = Post.objects.create(
+			channel=self.channel,
+			author=self.user,
+			title="Private draft",
+			body="Body",
+			is_published=False,
+		)
+		self.client.login(username="bob2", password="password123")
+
+		response = self.client.get(
+			reverse("blog:post-detail", kwargs={"channel_slug": self.channel.slug, "post_slug": draft.slug})
+		)
+
+		self.assertEqual(response.status_code, 404)
+
+	def test_draft_list_shows_only_own_unpublished_posts(self):
+		Post.objects.create(channel=self.channel, author=self.user, title="Published one", body="Body", is_published=True)
+		draft = Post.objects.create(channel=self.channel, author=self.user, title="Draft one", body="Body", is_published=False)
+		self.client.login(username="alice2", password="password123")
+
+		response = self.client.get(reverse("blog:draft-posts"))
+
+		self.assertEqual(response.status_code, 200)
+		posts = list(response.context["posts"])
+		self.assertIn(draft, posts)
+		self.assertNotIn("Published one", [p.title for p in posts])
+
+	def test_owner_can_publish_existing_draft_and_notify_followers(self):
+		draft = Post.objects.create(
+			channel=self.channel,
+			author=self.user,
+			title="To publish",
+			body="Body",
+			is_published=False,
+		)
+		self.client.login(username="bob2", password="password123")
+		ChannelFollow.objects.create(follower=self.other_user, channel=self.channel)
+		self.client.logout()
+		self.client.login(username="alice2", password="password123")
+
+		response = self.client.post(
+			reverse("blog:post-edit", kwargs={"channel_slug": self.channel.slug, "post_slug": draft.slug}),
+			{"title": "To publish", "body": "Body", "tags_input": "", "action": "publish"},
+		)
+
+		self.assertRedirects(
+			response,
+			reverse("blog:post-detail", kwargs={"channel_slug": self.channel.slug, "post_slug": draft.slug}),
+		)
+		draft.refresh_from_db()
+		self.assertTrue(draft.is_published)
+		notification = Notification.objects.filter(recipient=self.other_user, actor=self.user).first()
+		self.assertIsNotNone(notification)
+		self.assertEqual(notification.notification_type, Notification.TYPE_NEW_POST)
+
+	def test_profile_page_state_filter_shows_all_for_owner(self):
+		# setUp creates 1 published post, add 1 more published + 1 draft
+		Post.objects.create(channel=self.channel, author=self.user, title="Published p", body="Body", is_published=True)
+		Post.objects.create(channel=self.channel, author=self.user, title="Draft d", body="Body", is_published=False)
+		self.client.login(username="alice2", password="password123")
+
+		response = self.client.get(reverse("blog:profile"), {"state": "all"})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.context["state_filter"], "all")
+		posts = list(response.context["user_posts"])
+		self.assertEqual(len(posts), 3)  # 1 from setUp + 1 published + 1 draft
+		self.assertContains(response, "All (3)")
+		self.assertContains(response, "Published (2)")
+		self.assertContains(response, "Drafts (1)")
+
+	def test_profile_page_state_filter_published_only(self):
+		# setUp creates 1 published post, add 1 more published + 1 draft
+		Post.objects.create(channel=self.channel, author=self.user, title="Published", body="Body", is_published=True)
+		Post.objects.create(channel=self.channel, author=self.user, title="Draft", body="Body", is_published=False)
+		self.client.login(username="alice2", password="password123")
+
+		response = self.client.get(reverse("blog:profile"), {"state": "published"})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.context["state_filter"], "published")
+		posts = list(response.context["user_posts"])
+		self.assertEqual(len(posts), 2)  # 1 from setUp + 1 published, draft filtered out
+		self.assertTrue(all(p.is_published for p in posts))
+
+	def test_profile_page_non_owner_cannot_see_drafts(self):
+		# setUp creates 1 published post, add 1 more published + 1 draft
+		Post.objects.create(channel=self.channel, author=self.user, title="Published", body="Body", is_published=True)
+		Post.objects.create(channel=self.channel, author=self.user, title="Draft", body="Body", is_published=False)
+		self.client.login(username="bob2", password="password123")
+
+		response = self.client.get(
+			reverse("blog:user-profile", kwargs={"username": self.user.username}),
+			{"state": "drafts"}
+		)
+
+		self.assertEqual(response.status_code, 200)
+		# Non-owner always sees "published" filter even if drafts is requested
+		self.assertEqual(response.context["state_filter"], "published")
+		posts = list(response.context["user_posts"])
+		self.assertEqual(len(posts), 2)  # 1 from setUp + 1 published (draft invisible to non-owners)
+		self.assertTrue(all(p.is_published for p in posts))
+
 	def test_comment_create_notifies_post_author(self):
 		self.client.login(username="bob2", password="password123")
 
@@ -361,6 +489,68 @@ class BlogViewAccessTests(TestCase):
 		notification = Notification.objects.filter(recipient=self.user, actor=self.other_user).first()
 		self.assertIsNotNone(notification)
 		self.assertEqual(notification.notification_type, Notification.TYPE_COMMENT)
+
+	def test_comment_create_notifies_channel_owner_when_different_from_post_author(self):
+		channel_owner = User.objects.create_user(username="channel_owner", password="password123")
+		post_author = User.objects.create_user(username="post_author", password="password123")
+		commenter = User.objects.create_user(username="commenter", password="password123")
+		channel = Channel.objects.create(owner=channel_owner, name="Shared Channel")
+		post = Post.objects.create(channel=channel, author=post_author, title="Guest Post", body="Body")
+
+		self.client.login(username="commenter", password="password123")
+		response = self.client.post(
+			reverse(
+				"blog:comment-create",
+				kwargs={"channel_slug": post.channel.slug, "post_slug": post.slug},
+			),
+			{"body": "Nice one"},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		recipients = set(
+			Notification.objects.filter(actor=commenter, notification_type=Notification.TYPE_COMMENT)
+			.values_list("recipient_id", flat=True)
+		)
+		self.assertEqual(recipients, {post_author.id, channel_owner.id})
+
+	def test_comment_create_does_not_duplicate_when_post_author_is_channel_owner(self):
+		self.client.login(username="bob2", password="password123")
+		response = self.client.post(
+			reverse(
+				"blog:comment-create",
+				kwargs={"channel_slug": self.post.channel.slug, "post_slug": self.post.slug},
+			),
+			{"body": "Only one notification expected"},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(
+			Notification.objects.filter(
+				recipient=self.user,
+				actor=self.other_user,
+				notification_type=Notification.TYPE_COMMENT,
+			).count(),
+			1,
+		)
+
+	def test_comment_create_does_not_notify_self(self):
+		self.client.login(username="alice2", password="password123")
+		response = self.client.post(
+			reverse(
+				"blog:comment-create",
+				kwargs={"channel_slug": self.post.channel.slug, "post_slug": self.post.slug},
+			),
+			{"body": "My own post comment"},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		self.assertFalse(
+			Notification.objects.filter(
+				recipient=self.user,
+				actor=self.user,
+				notification_type=Notification.TYPE_COMMENT,
+			).exists()
+		)
 
 	def test_notifications_page_supports_unread_filter_and_search(self):
 		self.client.login(username="bob2", password="password123")
@@ -460,6 +650,70 @@ class BlogViewAccessTests(TestCase):
 		self.assertContains(response, self.channel.name)
 		self.assertContains(response, self.post.title)
 
+	def test_channel_owner_sees_channel_analytics(self):
+		self.client.login(username="alice2", password="password123")
+		second_post = Post.objects.create(channel=self.channel, author=self.user, title="Metrics post", body="Body")
+		Post.objects.filter(pk=self.post.pk).update(view_count=10, love_count=3, comment_count=2, saves_count=1)
+		Post.objects.filter(pk=second_post.pk).update(view_count=20, love_count=5, comment_count=4, saves_count=3)
+		self.channel.refresh_from_db()
+
+		response = self.client.get(reverse("blog:channel-detail", kwargs={"channel_slug": self.channel.slug}))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Channel analytics")
+		analytics = response.context["channel_analytics"]
+		self.assertIsNotNone(analytics)
+		self.assertEqual(analytics["total_posts"], self.channel.posts_count)
+		self.assertEqual(analytics["total_views"], 30)
+		self.assertEqual(analytics["total_loves"], 8)
+		self.assertEqual(analytics["total_comments"], 6)
+		self.assertEqual(analytics["total_saves"], 4)
+		self.assertEqual(analytics["total_engagement"], 18)
+
+	def test_non_owner_does_not_see_channel_analytics(self):
+		self.client.login(username="bob2", password="password123")
+		response = self.client.get(reverse("blog:channel-detail", kwargs={"channel_slug": self.channel.slug}))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertIsNone(response.context["channel_analytics"])
+		self.assertNotContains(response, "Channel analytics")
+
+	def test_channel_owner_analytics_respects_time_window(self):
+		self.client.login(username="alice2", password="password123")
+		old_post = Post.objects.create(channel=self.channel, author=self.user, title="Old data", body="Body")
+		recent_post = Post.objects.create(channel=self.channel, author=self.user, title="Recent data", body="Body")
+		Post.objects.filter(pk=old_post.pk).update(created_at=timezone.now() - timedelta(days=40), view_count=50)
+		Post.objects.filter(pk=recent_post.pk).update(created_at=timezone.now() - timedelta(days=2), view_count=10)
+
+		response_7d = self.client.get(
+			reverse("blog:channel-detail", kwargs={"channel_slug": self.channel.slug}),
+			{"window": "7d"},
+		)
+		response_all = self.client.get(
+			reverse("blog:channel-detail", kwargs={"channel_slug": self.channel.slug}),
+			{"window": "all"},
+		)
+
+		self.assertEqual(response_7d.status_code, 200)
+		self.assertEqual(response_all.status_code, 200)
+		self.assertEqual(response_7d.context["analytics_window"], "7d")
+		self.assertEqual(response_all.context["analytics_window"], "all")
+		self.assertEqual(response_7d.context["channel_analytics"]["total_views"], 10)
+		self.assertEqual(response_all.context["channel_analytics"]["total_views"], 60)
+
+	def test_channel_owner_analytics_window_links_preserve_existing_query_params(self):
+		self.client.login(username="alice2", password="password123")
+		response = self.client.get(
+			reverse("blog:channel-detail", kwargs={"channel_slug": self.channel.slug}),
+			{"window": "7d", "q": "growth", "status": "active"},
+		)
+
+		self.assertEqual(response.status_code, 200)
+		window_links = {item["value"]: item["query_string"] for item in response.context["analytics_window_links"]}
+		self.assertIn("window=30d", window_links["30d"])
+		self.assertIn("q=growth", window_links["30d"])
+		self.assertIn("status=active", window_links["30d"])
+
 	def test_post_detail_page_loads(self):
 		self.client.login(username="bob2", password="password123")
 
@@ -473,6 +727,8 @@ class BlogViewAccessTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, self.post.title)
 		self.assertContains(response, self.post.body)
+		self.post.refresh_from_db()
+		self.assertEqual(self.post.view_count, 1)
 
 	def test_home_redirects_authenticated_user_to_following_posts(self):
 		self.client.login(username="bob2", password="password123")
@@ -514,6 +770,18 @@ class BlogViewAccessTests(TestCase):
 		self.assertIn("Django Search", titles)
 		self.assertNotIn("Flask Notes", titles)
 
+	def test_following_feed_shows_trending_tags(self):
+		self.client.login(username="bob2", password="password123")
+		tagged_post = Post.objects.create(channel=self.channel, author=self.user, title="Tagged", body="Body")
+		topic_tag = Tag.objects.create(name="analysis", slug="analysis")
+		tagged_post.tags.add(topic_tag)
+
+		response = self.client.get(reverse("blog:following-posts"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Trending tags")
+		self.assertContains(response, "#analysis")
+
 	def test_channel_post_list_search_filters_results(self):
 		self.client.login(username="bob2", password="password123")
 		matching_post = Post.objects.create(
@@ -535,6 +803,43 @@ class BlogViewAccessTests(TestCase):
 		posts = list(response.context["posts"])
 		self.assertIn(matching_post, posts)
 		self.assertEqual(len(posts), 1)
+
+	def test_tag_list_page_orders_tags_by_usage(self):
+		self.client.login(username="bob2", password="password123")
+		python_post = Post.objects.create(channel=self.channel, author=self.user, title="Python piece", body="Body")
+		django_post = Post.objects.create(channel=self.channel, author=self.user, title="Django piece", body="Body")
+		mixed_post = Post.objects.create(channel=self.channel, author=self.user, title="Both piece", body="Body")
+		python_tag = Tag.objects.create(name="python", slug="python")
+		django_tag = Tag.objects.create(name="django", slug="django")
+		api_tag = Tag.objects.create(name="api", slug="api")
+		python_post.tags.add(python_tag)
+		django_post.tags.add(django_tag)
+		mixed_post.tags.add(python_tag, django_tag, api_tag)
+
+		response = self.client.get(reverse("blog:tag-list"))
+
+		self.assertEqual(response.status_code, 200)
+		tags = list(response.context["tags"])
+		self.assertEqual(tags[0].slug, "django")
+		self.assertEqual(tags[1].slug, "python")
+		self.assertContains(response, "Browse tags")
+
+	def test_tag_post_page_shows_related_tags_and_browse_link(self):
+		self.client.login(username="bob2", password="password123")
+		primary = Tag.objects.create(name="python", slug="python")
+		related = Tag.objects.create(name="django", slug="django")
+		other = Tag.objects.create(name="music", slug="music")
+		post = Post.objects.create(channel=self.channel, author=self.user, title="Tagged entry", body="Body")
+		other_post = Post.objects.create(channel=self.channel, author=self.user, title="Other entry", body="Body")
+		post.tags.add(primary, related)
+		other_post.tags.add(other)
+
+		response = self.client.get(reverse("blog:tag-posts", kwargs={"tag_slug": primary.slug}))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Browse all tags")
+		self.assertContains(response, "Related tags")
+		self.assertContains(response, "#django")
 
 	def test_profile_page_shows_user_details_and_own_posts(self):
 		self.client.login(username="bob2", password="password123")
@@ -578,6 +883,18 @@ class BlogViewAccessTests(TestCase):
 
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, self.other_user.username)
+
+	def test_search_results_show_matching_tags(self):
+		self.client.login(username="bob2", password="password123")
+		search_tag = Tag.objects.create(name="django", slug="django")
+		tagged_post = Post.objects.create(channel=self.channel, author=self.user, title="Framework notes", body="Body")
+		tagged_post.tags.add(search_tag)
+
+		response = self.client.get(reverse("blog:search"), {"q": "djan"})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Tags")
+		self.assertContains(response, "#django")
 
 	def test_profile_edit_updates_user_and_profile_details(self):
 		self.client.login(username="bob2", password="password123")

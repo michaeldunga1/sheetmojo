@@ -76,6 +76,9 @@
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a></span>
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}</span>
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-book-open"></i></span>{{ post.reading_time_minutes }} min read</span>
+    {% if not post.is_published %}
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-file-pen"></i></span>Draft</span>
+    {% endif %}
   </div>
   {% with post_tags=post.tags.all %}
     {% if post_tags %}
@@ -122,6 +125,9 @@
         <a class="button is-light" href="{% url 'blog:post-list' post.channel.slug %}" hx-boost="true">
           <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
           <span>More from this channel</span>
+        </a>
+        <a class="button is-light" href="{% url 'blog:post-focus' post.channel.slug post.slug %}" hx-boost="true" title="Open focused reading view" aria-label="Open focused reading view">
+          <span class="icon"><i class="fa-solid fa-table-columns"></i></span>
         </a>
         {% if user.is_authenticated %}
           {% if is_post_saved %}
@@ -291,4 +297,20 @@
     </div>
   {% endif %}
 {% endfor %}
+
+{% if comments_is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="Comment pagination">
+    {% if comment_page_obj.has_previous %}
+      <a class="pagination-previous" href="?{% if comments_page_query_string %}{{ comments_page_query_string }}&amp;{% endif %}comment_page={{ comment_page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if comment_page_obj.has_next %}
+      <a class="pagination-next" href="?{% if comments_page_query_string %}{{ comments_page_query_string }}&amp;{% endif %}comment_page={{ comment_page_obj.next_page_number }}" hx-boost="true">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+  </nav>
+{% endif %}
 {% endblock %}

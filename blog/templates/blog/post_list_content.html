@@ -6,12 +6,15 @@
     <div class="card-content post-card">
       <div class="post-card-body">
         {% if post.image_exists %}
-          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" aria-label="{{ post.title }}">
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" aria-label="{{ post.title }}" data-tooltip="{{ post.body|excerpt }}">
             <img src="{{ post.image.url }}" alt="{{ post.title }}">
           </a>
         {% endif %}
         <p class="post-kicker">Article</p>
-        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">{{ post.title }}</a></h3>
+        {% if not post.is_published %}
+          <p class="mb-2"><span class="tag is-warning is-light">Draft</span></p>
+        {% endif %}
+        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" data-tooltip="{{ post.body|excerpt }}">{{ post.title }}</a></h3>
         {% with post_tags=post.tags.all %}
           {% if post_tags %}
             <div class="tags mb-2">
@@ -65,7 +68,7 @@
           {% endif %}
           <a class="button is-link is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
             <span class="icon"><i class="fa-solid fa-comments"></i></span>
-            <span>Comments ({{ post.comments.count }})</span>
+            <span>Comments ({{ post.comment_count }})</span>
           </a>
           <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" title="Read article" aria-label="Read article">
             <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>

@@ -1,10 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Count
+from django.db.models import Count, F, Max, Q, Sum
 from django.db import IntegrityError
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -15,7 +15,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from datetime import timedelta
 
 from .forms import ChannelForm, CommentForm, PostForm, ProfileEditForm, SignUpForm, UserEditForm
-from .models import Channel, ChannelFollow, Comment, Notification, Post, PostReaction, Profile, SavedPost, Tag, UserFollow
+from .models import Channel, ChannelFollow, Comment, CommentReaction, Notification, Post, PostReaction, Profile, SavedPost, Tag, UserFollow
 
 User = get_user_model()
 
@@ -37,6 +37,16 @@ def apply_search(queryset, search_query, search_fields):
 def build_page_query_string(request):
 	params = request.GET.copy()
 	params.pop("page", None)
+	return params.urlencode()
+
+
+def build_query_with_params(request, **updates):
+	params = request.GET.copy()
+	for key, value in updates.items():
+		if value is None:
+			params.pop(key, None)
+		else:
+			params[key] = str(value)
 	return params.urlencode()
 
 
@@ -64,6 +74,30 @@ def create_notification(recipient, actor, notification_type, message, target_url
 		message=message,
 		target_url=target_url,
 	)
+
+
+def get_discovery_tags(limit=12, search_query=""):
+	queryset = Tag.objects.filter(posts__is_published=True)
+	if search_query:
+		queryset = queryset.filter(name__icontains=search_query)
+	return (
+		queryset.annotate(
+			post_count=Count("posts", filter=Q(posts__is_published=True), distinct=True),
+			latest_post_at=Max("posts__created_at", filter=Q(posts__is_published=True)),
+		)
+		.order_by("-post_count", "-latest_post_at", "name")
+		.distinct()[:limit]
+	)
+
+
+def get_visible_post_filter(user):
+	if user.is_authenticated:
+		return Q(is_published=True) | Q(author=user) | Q(channel__owner=user)
+	return Q(is_published=True)
+
+
+def get_visible_posts_queryset(user):
+	return Post.objects.filter(get_visible_post_filter(user))
 
 
 def save_post_tags(post, form):
@@ -127,7 +161,6 @@ class ChannelListView(SearchContextMixin, LoginRequiredMixin, ListView):
 	def get_queryset(self):
 		queryset = (
 			Channel.objects.select_related("owner")
-			.annotate(follower_count=Count("followers"))
 			.order_by("-follower_count", "-created_at", "-id")
 		)
 		return self.apply_search(queryset)
@@ -186,6 +219,7 @@ class SavedPostListView(SearchContextMixin, LoginRequiredMixin, ListView):
 	def get_queryset(self):
 		queryset = (
 			Post.objects.filter(saved_by__user=self.request.user)
+			.filter(get_visible_post_filter(self.request.user))
 			.select_related("channel", "author", "channel__owner")
 			.order_by("-saved_by__created_at", "-id")
 		)
@@ -274,17 +308,81 @@ class ChannelDetailView(LoginRequiredMixin, DetailView):
 	context_object_name = "channel"
 	slug_field = "slug"
 	slug_url_kwarg = "channel_slug"
+	analytics_window_choices = (
+		("7d", "7 days"),
+		("30d", "30 days"),
+		("all", "All time"),
+	)
+
+	def get_analytics_window(self):
+		window = self.request.GET.get("window", "7d")
+		valid = {choice[0] for choice in self.analytics_window_choices}
+		return window if window in valid else "7d"
 
 	def get_queryset(self):
-		return Channel.objects.select_related("owner").annotate(follower_count=Count("followers"))
+		return Channel.objects.select_related("owner")
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
-		context["recent_posts"] = self.object.posts.select_related("author").order_by("-created_at")[:5]
+		context["recent_posts"] = self.object.posts.filter(is_published=True).select_related("author").order_by("-created_at")[:5]
 		context["is_following"] = ChannelFollow.objects.filter(
 			follower=self.request.user,
 			channel=self.object,
 		).exists()
+		if self.object.owner_id == self.request.user.id:
+			analytics_window = self.get_analytics_window()
+			channel_posts = self.object.posts.filter(is_published=True)
+			if analytics_window == "7d":
+				channel_posts = channel_posts.filter(created_at__gte=timezone.now() - timedelta(days=7))
+			elif analytics_window == "30d":
+				channel_posts = channel_posts.filter(created_at__gte=timezone.now() - timedelta(days=30))
+
+			totals = channel_posts.aggregate(
+				total_views=Sum("view_count"),
+				total_loves=Sum("love_count"),
+				total_comments=Sum("comment_count"),
+				total_saves=Sum("saves_count"),
+			)
+			total_posts = channel_posts.count()
+			total_views = totals["total_views"] or 0
+			total_loves = totals["total_loves"] or 0
+			total_comments = totals["total_comments"] or 0
+			total_saves = totals["total_saves"] or 0
+			total_engagement = total_loves + total_comments + total_saves
+			top_post = channel_posts.order_by(
+				"-love_count", "-comment_count", "-saves_count", "-view_count", "-created_at"
+			).first()
+			window_label = dict(self.analytics_window_choices).get(analytics_window, "7 days")
+
+			context["channel_analytics"] = {
+				"total_posts": total_posts,
+				"total_followers": self.object.follower_count,
+				"total_views": total_views,
+				"total_loves": total_loves,
+				"total_comments": total_comments,
+				"total_saves": total_saves,
+				"total_engagement": total_engagement,
+				"posts_in_window": total_posts,
+				"window_label": window_label,
+				"avg_engagement_per_post": round(total_engagement / total_posts, 1) if total_posts else 0,
+				"engagement_rate": round((total_engagement / total_views) * 100, 1) if total_views else 0,
+				"top_post": top_post,
+			}
+			context["analytics_window"] = analytics_window
+			context["analytics_window_choices"] = self.analytics_window_choices
+			context["analytics_window_links"] = [
+				{
+					"value": value,
+					"label": label,
+					"query_string": build_query_with_params(self.request, window=value),
+				}
+				for value, label in self.analytics_window_choices
+			]
+		else:
+			context["channel_analytics"] = None
+			context["analytics_window"] = None
+			context["analytics_window_choices"] = self.analytics_window_choices
+			context["analytics_window_links"] = []
 		return context
 
 
@@ -296,7 +394,7 @@ class FollowingPostListView(SearchContextMixin, ListView):
 	search_fields = ("title", "body", "author__username", "channel__name")
 
 	def get_queryset(self):
-		base_queryset = Post.objects.select_related("channel", "author", "channel__owner")
+		base_queryset = Post.objects.filter(is_published=True).select_related("channel", "author", "channel__owner")
 
 		if not self.request.user.is_authenticated:
 			return self.apply_search(base_queryset.order_by("-created_at"))
@@ -320,6 +418,7 @@ class FollowingPostListView(SearchContextMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context["saved_post_ids"] = build_saved_post_ids(self.request.user, context.get("posts", []))
+		context["trending_tags"] = get_discovery_tags(limit=10)
 		return context
 
 
@@ -334,7 +433,7 @@ class UserFollowingPostListView(SearchContextMixin, LoginRequiredMixin, ListView
 		followed_user_ids = list(
 			UserFollow.objects.filter(follower=self.request.user).values_list("following_id", flat=True)
 		)
-		base_queryset = Post.objects.select_related("channel", "author", "channel__owner").order_by("-created_at")
+		base_queryset = Post.objects.filter(is_published=True).select_related("channel", "author", "channel__owner").order_by("-created_at")
 		if not followed_user_ids:
 			return self.apply_search(base_queryset.none())
 		queryset = base_queryset.filter(author_id__in=followed_user_ids).distinct()
@@ -366,15 +465,7 @@ class TrendingPostListView(SearchContextMixin, LoginRequiredMixin, ListView):
 		window = self.get_window()
 
 		queryset = (
-			Post.objects.select_related("channel", "author", "channel__owner")
-			.annotate(
-				love_count=Count(
-					"reactions",
-					filter=Q(reactions__reaction=PostReaction.LOVE),
-					distinct=True,
-				),
-				comment_count=Count("comments", distinct=True),
-			)
+			Post.objects.filter(is_published=True).select_related("channel", "author", "channel__owner")
 		)
 
 		if window != "all":
@@ -411,6 +502,7 @@ class UserProfileView(LoginRequiredMixin, TemplateView):
 			build_user_profile_context(
 				self.request.user,
 				self.request.user,
+				request=self.request,
 				search_query=get_search_query(self.request),
 			)
 		)
@@ -427,6 +519,7 @@ class PublicUserProfileView(LoginRequiredMixin, TemplateView):
 			build_user_profile_context(
 				profile_user,
 				self.request.user,
+				request=self.request,
 				search_query=get_search_query(self.request),
 			)
 		)
@@ -434,22 +527,55 @@ class PublicUserProfileView(LoginRequiredMixin, TemplateView):
 
 
 
-def build_user_profile_context(profile_user, current_user, search_query=""):
+def build_user_profile_context(profile_user, current_user, request=None, search_query=""):
 	profile_obj = Profile.objects.filter(user=profile_user).first()
-	all_user_posts = (
+	visible_posts = (
 		Post.objects.filter(author=profile_user)
 		.select_related("channel")
 		.order_by("-created_at")
 	)
-	user_posts = apply_search(all_user_posts, search_query, ("title", "body", "channel__name"))
+	if profile_user != current_user:
+		visible_posts = visible_posts.filter(is_published=True)
+
+	state_filter = "all"
+	if request:
+		requested_state = request.GET.get("state", "all")
+		if profile_user == current_user:
+			state_filter = requested_state if requested_state in {"all", "published", "drafts"} else "all"
+		else:
+			state_filter = "published"
+
+	if state_filter == "published":
+		visible_posts = visible_posts.filter(is_published=True)
+	elif state_filter == "drafts":
+		visible_posts = visible_posts.filter(is_published=False)
+
+	filtered_user_posts = apply_search(visible_posts, search_query, ("title", "body", "channel__name"))
+	post_page_number = request.GET.get("page", "1") if request else "1"
+	user_posts_page = Paginator(filtered_user_posts, 10).get_page(post_page_number)
+	user_posts = list(user_posts_page.object_list)
+	page_query_string = ""
+	if request:
+		params = request.GET.copy()
+		params.pop("page", None)
+		page_query_string = params.urlencode()
 	is_following = False
 	if current_user.is_authenticated and profile_user != current_user:
 		is_following = UserFollow.objects.filter(follower=current_user, following=profile_user).exists()
+	published_post_count = Post.objects.filter(author=profile_user, is_published=True).count()
+	draft_post_count = Post.objects.filter(author=profile_user, is_published=False).count() if profile_user == current_user else 0
 	return {
 		"profile_user": profile_user,
 		"profile_obj": profile_obj,
 		"user_posts": user_posts,
-		"user_post_count": all_user_posts.count(),
+		"page_obj": user_posts_page,
+		"paginator": user_posts_page.paginator,
+		"is_paginated": user_posts_page.has_other_pages(),
+		"page_query_string": page_query_string,
+		"user_post_count": Post.objects.filter(author=profile_user).count() if profile_user == current_user else published_post_count,
+		"published_post_count": published_post_count,
+		"draft_post_count": draft_post_count,
+		"state_filter": state_filter,
 		"user_channel_count": Channel.objects.filter(owner=profile_user).count(),
 		"user_follower_count": UserFollow.objects.filter(following=profile_user).count(),
 		"user_following_count": UserFollow.objects.filter(follower=profile_user).count(),
@@ -614,7 +740,7 @@ class UnfollowChannelView(LoginRequiredMixin, View):
 
 class SavePostView(LoginRequiredMixin, View):
 	def post(self, request, channel_slug, post_slug):
-		post_obj = get_object_or_404(Post, channel__slug=channel_slug, slug=post_slug)
+		post_obj = get_object_or_404(get_visible_posts_queryset(request.user), channel__slug=channel_slug, slug=post_slug)
 		SavedPost.objects.get_or_create(user=request.user, post=post_obj)
 		next_url = request.POST.get("next", "")
 		if next_url and url_has_allowed_host_and_scheme(
@@ -628,7 +754,7 @@ class SavePostView(LoginRequiredMixin, View):
 
 class UnsavePostView(LoginRequiredMixin, View):
 	def post(self, request, channel_slug, post_slug):
-		post_obj = get_object_or_404(Post, channel__slug=channel_slug, slug=post_slug)
+		post_obj = get_object_or_404(get_visible_posts_queryset(request.user), channel__slug=channel_slug, slug=post_slug)
 		SavedPost.objects.filter(user=request.user, post=post_obj).delete()
 		next_url = request.POST.get("next", "")
 		if next_url and url_has_allowed_host_and_scheme(
@@ -642,7 +768,7 @@ class UnsavePostView(LoginRequiredMixin, View):
 
 class LovePostView(LoginRequiredMixin, View):
 	def post(self, request, channel_slug, post_slug):
-		post_obj = get_object_or_404(Post, channel__slug=channel_slug, slug=post_slug)
+		post_obj = get_object_or_404(get_visible_posts_queryset(request.user), channel__slug=channel_slug, slug=post_slug)
 		PostReaction.objects.get_or_create(user=request.user, post=post_obj, reaction=PostReaction.LOVE)
 		next_url = request.POST.get("next", "")
 		if next_url and url_has_allowed_host_and_scheme(
@@ -656,7 +782,7 @@ class LovePostView(LoginRequiredMixin, View):
 
 class UnlovePostView(LoginRequiredMixin, View):
 	def post(self, request, channel_slug, post_slug):
-		post_obj = get_object_or_404(Post, channel__slug=channel_slug, slug=post_slug)
+		post_obj = get_object_or_404(get_visible_posts_queryset(request.user), channel__slug=channel_slug, slug=post_slug)
 		PostReaction.objects.filter(user=request.user, post=post_obj, reaction=PostReaction.LOVE).delete()
 		next_url = request.POST.get("next", "")
 		if next_url and url_has_allowed_host_and_scheme(
@@ -670,7 +796,6 @@ class UnlovePostView(LoginRequiredMixin, View):
 
 class LoveCommentView(LoginRequiredMixin, View):
 	def post(self, request, pk):
-		from .models import CommentReaction
 		comment_obj = get_object_or_404(Comment, pk=pk)
 		CommentReaction.objects.get_or_create(user=request.user, comment=comment_obj, reaction=CommentReaction.LOVE)
 		next_url = request.POST.get("next", "")
@@ -685,7 +810,6 @@ class LoveCommentView(LoginRequiredMixin, View):
 
 class UnloveCommentView(LoginRequiredMixin, View):
 	def post(self, request, pk):
-		from .models import CommentReaction
 		comment_obj = get_object_or_404(Comment, pk=pk)
 		CommentReaction.objects.filter(user=request.user, comment=comment_obj, reaction=CommentReaction.LOVE).delete()
 		next_url = request.POST.get("next", "")
@@ -768,7 +892,7 @@ class PostListView(SearchContextMixin, LoginRequiredMixin, ListView):
 
 	def get_queryset(self):
 		queryset = (
-			Post.objects.filter(channel=self.channel)
+			Post.objects.filter(channel=self.channel, is_published=True)
 			.select_related("author", "channel", "channel__owner")
 			.order_by("-created_at")
 		)
@@ -777,6 +901,27 @@ class PostListView(SearchContextMixin, LoginRequiredMixin, ListView):
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		context["channel"] = self.channel
+		context["saved_post_ids"] = build_saved_post_ids(self.request.user, context.get("posts", []))
+		return context
+
+
+class DraftPostListView(SearchContextMixin, LoginRequiredMixin, ListView):
+	model = Post
+	template_name = "blog/draft_post_list.html"
+	context_object_name = "posts"
+	paginate_by = 10
+	search_fields = ("title", "body", "channel__name")
+
+	def get_queryset(self):
+		queryset = (
+			Post.objects.filter(author=self.request.user, is_published=False)
+			.select_related("author", "channel", "channel__owner")
+			.order_by("-created_at")
+		)
+		return self.apply_search(queryset)
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
 		context["saved_post_ids"] = build_saved_post_ids(self.request.user, context.get("posts", []))
 		return context
 
@@ -794,16 +939,66 @@ class TagPostListView(SearchContextMixin, ListView):
 
 	def get_queryset(self):
 		queryset = (
-			Post.objects.filter(tags=self.tag)
+			Post.objects.filter(tags=self.tag, is_published=True)
 			.select_related("author", "channel", "channel__owner")
+			.prefetch_related("tags")
 			.order_by("-created_at")
 		)
 		return self.apply_search(queryset)
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
+		related_tags = (
+			Tag.objects.filter(posts__in=self.object_list)
+			.exclude(pk=self.tag.pk)
+			.annotate(
+				post_count=Count("posts", filter=Q(posts__is_published=True), distinct=True),
+				latest_post_at=Max("posts__created_at", filter=Q(posts__is_published=True)),
+			)
+			.order_by("-post_count", "-latest_post_at", "name")
+			.distinct()[:10]
+		)
+		popular_tags = (
+			Tag.objects.filter(posts__is_published=True)
+			.annotate(
+				post_count=Count("posts", filter=Q(posts__is_published=True), distinct=True),
+				latest_post_at=Max("posts__created_at", filter=Q(posts__is_published=True)),
+			)
+			.order_by("-post_count", "-latest_post_at", "name")
+			.distinct()[:12]
+		)
 		context["tag"] = self.tag
+		context["tag_post_count"] = self.object_list.paginator.count if hasattr(self.object_list, "paginator") else len(self.object_list)
+		context["related_tags"] = related_tags
+		context["popular_tags"] = popular_tags
 		context["saved_post_ids"] = build_saved_post_ids(self.request.user, context.get("posts", []))
+		return context
+
+
+class TagListView(SearchContextMixin, ListView):
+	model = Tag
+	template_name = "blog/tag_list.html"
+	context_object_name = "tags"
+	paginate_by = 24
+	search_fields = ("name",)
+
+	def get_queryset(self):
+		queryset = (
+			Tag.objects.filter(posts__is_published=True)
+			.annotate(
+				post_count=Count("posts", filter=Q(posts__is_published=True), distinct=True),
+				latest_post_at=Max("posts__created_at", filter=Q(posts__is_published=True)),
+			)
+			.order_by("-post_count", "-latest_post_at", "name")
+			.distinct()
+		)
+		return self.apply_search(queryset)
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		base_queryset = self.get_queryset()
+		context["featured_tags"] = list(base_queryset[:8])
+		context["tag_count"] = base_queryset.count()
 		return context
 
 
@@ -819,57 +1014,77 @@ class PostDetailView(DetailView):
 			Post.objects.select_related("channel", "channel__owner", "author")
 			.prefetch_related("comments__author")
 			.filter(channel__slug=self.kwargs["channel_slug"])
+			.filter(get_visible_post_filter(self.request.user))
 		)
+
+	def get_object(self, queryset=None):
+		obj = super().get_object(queryset)
+		Post.objects.filter(pk=obj.pk).update(view_count=F("view_count") + 1)
+		obj.view_count += 1
+		return obj
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		post = self.object
 		user = self.request.user
+		comment_page_number = self.request.GET.get("comment_page", "1")
 		if user.is_authenticated:
 			user_comment = post.comments.filter(author=user).first()
-			other_comments = post.comments.exclude(author=user).order_by("-created_at")
+			other_comments_queryset = post.comments.exclude(author=user).order_by("-created_at")
 		else:
 			user_comment = None
-			other_comments = post.comments.order_by("-created_at")
+			other_comments_queryset = post.comments.order_by("-created_at")
+
+		other_comments_page = Paginator(other_comments_queryset, 10).get_page(comment_page_number)
+		other_comments = list(other_comments_page.object_list)
 		context["user_comment"] = user_comment
 		context["other_comments"] = other_comments
+		context["comment_page_obj"] = other_comments_page
+		context["comments_is_paginated"] = other_comments_page.has_other_pages()
+		context["comments_page_query_string"] = build_query_with_params(self.request, comment_page=None)
 		context["is_post_saved"] = user.is_authenticated and SavedPost.objects.filter(user=user, post=post).exists()
-		context["love_count"] = post.reactions.filter(reaction=PostReaction.LOVE).count()
+		context["love_count"] = post.love_count
 		context["is_post_loved"] = user.is_authenticated and post.reactions.filter(user=user, reaction=PostReaction.LOVE).exists()
 		
-		# Build comment love counts and user loves for template
+		# Build comment user loves for template
 		all_comments = []
 		if user_comment:
 			all_comments.append(user_comment)
 		all_comments.extend(list(other_comments))
 		
-		if all_comments:
-			from .models import CommentReaction
+		if all_comments and user.is_authenticated:
 			comment_ids = [c.id for c in all_comments]
-			
-			# Get love counts per comment
-			love_counts = {}
-			for result in CommentReaction.objects.filter(
-				comment_id__in=comment_ids, reaction=CommentReaction.LOVE
-			).values('comment_id').annotate(count=Count('id')):
-				love_counts[result['comment_id']] = result['count']
-			
-			# Get user loved comments
-			user_loved = set()
-			if user.is_authenticated:
-				user_loved = set(
-					CommentReaction.objects.filter(
-						user=user, comment_id__in=comment_ids, reaction=CommentReaction.LOVE
-					).values_list('comment_id', flat=True)
-				)
-			
-			# Attach to each comment for easy template access
+			user_loved = set(
+				CommentReaction.objects.filter(
+					user=user, comment_id__in=comment_ids, reaction=CommentReaction.LOVE
+				).values_list('comment_id', flat=True)
+			)
 			for comment in all_comments:
-				comment.love_count = love_counts.get(comment.id, 0)
 				comment.user_loved = comment.id in user_loved
 		
-		context["user_loved_comments"] = {c.id for c in all_comments if c.user_loved}
+		context["user_loved_comments"] = {c.id for c in all_comments if getattr(c, 'user_loved', False)}
 		return context
+
+
+class PostFocusView(DetailView):
+	model = Post
+	template_name = "blog/post_focus_view.html"
+	context_object_name = "post"
+	slug_field = "slug"
+	slug_url_kwarg = "post_slug"
+
+	def get_queryset(self):
+		return (
+			Post.objects.select_related("channel", "author")
+			.filter(channel__slug=self.kwargs["channel_slug"])
+			.filter(get_visible_post_filter(self.request.user))
+		)
+
+	def get_object(self, queryset=None):
+		obj = super().get_object(queryset)
+		Post.objects.filter(pk=obj.pk).update(view_count=F("view_count") + 1)
+		obj.view_count += 1
+		return obj
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -889,11 +1104,17 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 		return kwargs
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.channel.slug})
+		if self.object.is_published:
+			return reverse_lazy("blog:post-detail", kwargs={"channel_slug": self.channel.slug, "post_slug": self.object.slug})
+		return reverse_lazy("blog:draft-posts")
 
 	def form_valid(self, form):
+		action = self.request.POST.get("action", "publish")
+		form.instance.is_published = action == "publish"
 		response = super().form_valid(form)
 		save_post_tags(self.object, form)
+		if not self.object.is_published:
+			return response
 		notified_ids = set()
 		channel_followers = User.objects.filter(channel_follows__channel=self.channel).exclude(pk=self.request.user.pk).distinct()
 		for follower in channel_followers:
@@ -934,11 +1155,42 @@ class PostUpdateView(LoginRequiredMixin, ChannelPostOwnerRequiredMixin, UpdateVi
 		return Post.objects.select_related("channel", "channel__owner").filter(channel__slug=self.kwargs["channel_slug"])
 
 	def get_success_url(self):
-		return reverse_lazy("blog:post-list", kwargs={"channel_slug": self.object.channel.slug})
+		if self.object.is_published:
+			return reverse_lazy("blog:post-detail", kwargs={"channel_slug": self.object.channel.slug, "post_slug": self.object.slug})
+		return reverse_lazy("blog:draft-posts")
 
 	def form_valid(self, form):
+		was_published = self.get_object().is_published
+		action = self.request.POST.get("action", "publish")
+		form.instance.is_published = action == "publish"
 		response = super().form_valid(form)
 		save_post_tags(self.object, form)
+		if self.object.is_published and not was_published:
+			notified_ids = set()
+			channel_followers = User.objects.filter(channel_follows__channel=self.object.channel).exclude(pk=self.request.user.pk).distinct()
+			for follower in channel_followers:
+				create_notification(
+					recipient=follower,
+					actor=self.request.user,
+					notification_type=Notification.TYPE_NEW_POST,
+					message=f"{self.request.user.username} published a new post: {self.object.title}.",
+					target_url=self.object.get_absolute_url(),
+				)
+				notified_ids.add(follower.pk)
+			user_followers = (
+				User.objects.filter(user_following__following=self.request.user)
+				.exclude(pk=self.request.user.pk)
+				.exclude(pk__in=notified_ids)
+				.distinct()
+			)
+			for follower in user_followers:
+				create_notification(
+					recipient=follower,
+					actor=self.request.user,
+					notification_type=Notification.TYPE_NEW_POST,
+					message=f"{self.request.user.username} published a new post: {self.object.title}.",
+					target_url=self.object.get_absolute_url(),
+				)
 		return response
 
 
@@ -962,7 +1214,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
 	def dispatch(self, request, *args, **kwargs):
 		self.post_obj = get_object_or_404(
-			Post,
+			get_visible_posts_queryset(request.user),
 			channel__slug=self.kwargs["channel_slug"],
 			slug=self.kwargs["post_slug"],
 		)
@@ -976,12 +1228,33 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 	def form_valid(self, form):
 		try:
 			response = super().form_valid(form)
+			recipients = []
 			if self.post_obj.author_id != self.request.user.id:
+				recipients.append(
+					(
+						self.post_obj.author,
+						f"{self.request.user.username} commented on your post: {self.post_obj.title}.",
+					)
+				)
+
+			channel_owner = self.post_obj.channel.owner
+			if (
+				channel_owner.id != self.request.user.id
+				and channel_owner.id != self.post_obj.author_id
+			):
+				recipients.append(
+					(
+						channel_owner,
+						f"{self.request.user.username} commented on a post in your channel: {self.post_obj.title}.",
+					)
+				)
+
+			for recipient, message in recipients:
 				create_notification(
-					recipient=self.post_obj.author,
+					recipient=recipient,
 					actor=self.request.user,
 					notification_type=Notification.TYPE_COMMENT,
-					message=f"{self.request.user.username} commented on your post: {self.post_obj.title}.",
+					message=message,
 					target_url=self.post_obj.get_absolute_url(),
 				)
 			return response
@@ -1033,6 +1306,7 @@ class GlobalSearchView(ListView):
 	template_name = "blog/search_results.html"
 	context_object_name = "results"
 	paginate_by = 15
+	chunk_size = 8
 
 	def get_search_query(self):
 		return get_search_query(self.request)
@@ -1049,23 +1323,32 @@ class GlobalSearchView(ListView):
 			context["posts"] = []
 			context["channels"] = []
 			context["users"] = []
+			context["matching_tags"] = []
+			context["trending_tags"] = get_discovery_tags(limit=12)
 			return context
 
+		post_page_number = self.request.GET.get("post_page", "1")
+		channel_page_number = self.request.GET.get("channel_page", "1")
+		user_page_number = self.request.GET.get("user_page", "1")
+
 		# Search posts
-		posts = (
+		posts_queryset = (
 			Post.objects.filter(
 				Q(title__icontains=search_query)
 				| Q(body__icontains=search_query)
 				| Q(author__username__icontains=search_query)
 				| Q(channel__name__icontains=search_query)
+				,
+				is_published=True,
 			)
 			.select_related("author", "channel", "channel__owner")
 			.distinct()
-			.order_by("-created_at")[:10]
+			.order_by("-created_at")
 		)
+		posts_page = Paginator(posts_queryset, self.chunk_size).get_page(post_page_number)
 
 		# Search channels
-		channels = (
+		channels_queryset = (
 			Channel.objects.filter(
 				Q(name__icontains=search_query)
 				| Q(intro__icontains=search_query)
@@ -1073,25 +1356,58 @@ class GlobalSearchView(ListView):
 				| Q(owner__username__icontains=search_query)
 			)
 			.select_related("owner")
-			.annotate(follower_count=Count("followers"))
 			.distinct()
-			.order_by("-follower_count", "-created_at")[:10]
+			.order_by("-follower_count", "-created_at")
 		)
+		channels_page = Paginator(channels_queryset, self.chunk_size).get_page(channel_page_number)
 
 		# Search users
-		users = (
+		users_queryset = (
 			User.objects.filter(
 				Q(username__icontains=search_query)
 				| Q(first_name__icontains=search_query)
 				| Q(last_name__icontains=search_query)
 			)
 			.distinct()
-			.order_by("username")[:10]
+			.order_by("username")
 		)
+		users_page = Paginator(users_queryset, self.chunk_size).get_page(user_page_number)
+
+		posts = list(posts_page.object_list)
+		channels = list(channels_page.object_list)
+		users = list(users_page.object_list)
+		matching_tags = list(get_discovery_tags(limit=8, search_query=search_query))
 
 		context["posts"] = posts
 		context["channels"] = channels
 		context["users"] = users
+		context["matching_tags"] = matching_tags
+		context["trending_tags"] = get_discovery_tags(limit=8)
+		context["posts_total"] = posts_page.paginator.count
+		context["channels_total"] = channels_page.paginator.count
+		context["users_total"] = users_page.paginator.count
+		context["posts_has_next"] = posts_page.has_next()
+		context["channels_has_next"] = channels_page.has_next()
+		context["users_has_next"] = users_page.has_next()
+		context["posts_next_query"] = ""
+		context["channels_next_query"] = ""
+		context["users_next_query"] = ""
+		if posts_page.has_next():
+			context["posts_next_query"] = build_query_with_params(
+				self.request,
+				post_page=posts_page.next_page_number(),
+			)
+		if channels_page.has_next():
+			context["channels_next_query"] = build_query_with_params(
+				self.request,
+				channel_page=channels_page.next_page_number(),
+			)
+		if users_page.has_next():
+			context["users_next_query"] = build_query_with_params(
+				self.request,
+				user_page=users_page.next_page_number(),
+			)
+
 		context["saved_post_ids"] = build_saved_post_ids(self.request.user, posts)
 
 		# Track if user follows channels

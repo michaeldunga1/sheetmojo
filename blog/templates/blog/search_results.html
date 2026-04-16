@@ -39,13 +39,35 @@
 
 {% if search_query %}
   {% if posts or channels or users %}
+    {% if matching_tags %}
+      <div class="mb-6">
+        <h2 class="title is-5 mb-3">
+          <span class="icon mr-2"><i class="fa-solid fa-tags"></i></span>
+          <span>Tags</span>
+        </h2>
+        <div class="tags are-medium">
+          {% for tag in matching_tags %}
+            <a href="{% url 'blog:tag-posts' tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ tag.name }} · {{ tag.post_count }}</a>
+          {% endfor %}
+          <a href="{% url 'blog:tag-list' %}?q={{ search_query|urlencode }}" class="tag is-light" hx-boost="true">Browse all matching tags</a>
+        </div>
+      </div>
+    {% endif %}
+
     {% if posts %}
       <div class="mb-6">
         <h2 class="title is-5 mb-3">
           <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
-          <span>Posts ({{ posts|length }})</span>
+          <span>Posts ({{ posts_total }})</span>
         </h2>
         {% include 'blog/post_list_content.html' with posts=posts %}
+        {% if posts_has_next %}
+          <div class="mt-3">
+            <a class="button is-light" href="?{{ posts_next_query }}" hx-boost="true" title="Load more posts" aria-label="Load more posts">
+              <span class="icon"><i class="fa-solid fa-angles-down"></i></span>
+            </a>
+          </div>
+        {% endif %}
       </div>
     {% endif %}
 
@@ -53,7 +75,7 @@
       <div class="mb-6">
         <h2 class="title is-5 mb-3">
           <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
-          <span>Channels ({{ channels|length }})</span>
+          <span>Channels ({{ channels_total }})</span>
         </h2>
         <div class="channel-grid">
           {% for channel in channels %}
@@ -96,6 +118,13 @@
             </div>
           {% endfor %}
         </div>
+        {% if channels_has_next %}
+          <div class="mt-3">
+            <a class="button is-light" href="?{{ channels_next_query }}" hx-boost="true" title="Load more channels" aria-label="Load more channels">
+              <span class="icon"><i class="fa-solid fa-angles-down"></i></span>
+            </a>
+          </div>
+        {% endif %}
       </div>
     {% endif %}
 
@@ -103,7 +132,7 @@
       <div class="mb-6">
         <h2 class="title is-5 mb-3">
           <span class="icon mr-2"><i class="fa-solid fa-people"></i></span>
-          <span>People ({{ users|length }})</span>
+          <span>People ({{ users_total }})</span>
         </h2>
         <div class="user-grid">
           {% for search_user in users %}
@@ -127,6 +156,13 @@
             </div>
           {% endfor %}
         </div>
+        {% if users_has_next %}
+          <div class="mt-3">
+            <a class="button is-light" href="?{{ users_next_query }}" hx-boost="true" title="Load more people" aria-label="Load more people">
+              <span class="icon"><i class="fa-solid fa-angles-down"></i></span>
+            </a>
+          </div>
+        {% endif %}
       </div>
     {% endif %}
   {% else %}
@@ -134,11 +170,41 @@
       <span class="icon mr-2"><i class="fa-regular fa-circle-xmark"></i></span>
       No results found for "{{ search_query }}". Try different keywords.
     </div>
+    {% if matching_tags %}
+      <div class="card mt-4">
+        <div class="card-content">
+          <h2 class="title is-5 mb-3">
+            <span class="icon mr-2"><i class="fa-solid fa-tags"></i></span>
+            <span>Matching tags</span>
+          </h2>
+          <div class="tags are-medium">
+            {% for tag in matching_tags %}
+              <a href="{% url 'blog:tag-posts' tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ tag.name }} · {{ tag.post_count }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
   {% endif %}
 {% else %}
   <div class="notification is-light">
     <span class="icon mr-2"><i class="fa-regular fa-magnifying-glass"></i></span>
     Use the search box above to discover posts, channels, and people.
   </div>
+  {% if trending_tags %}
+    <section class="card mt-4">
+      <div class="card-content">
+        <h2 class="title is-5 mb-3">
+          <span class="icon mr-2"><i class="fa-solid fa-fire"></i></span>
+          <span>Popular tags</span>
+        </h2>
+        <div class="tags are-medium">
+          {% for tag in trending_tags %}
+            <a href="{% url 'blog:tag-posts' tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ tag.name }} · {{ tag.post_count }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
 {% endif %}
 {% endblock %}

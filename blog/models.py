@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 User = get_user_model()
@@ -49,6 +50,9 @@ class Channel(models.Model):
 
 	def __str__(self):
 		return f"{self.name} ({self.owner})"
+
+	follower_count = models.PositiveIntegerField(default=0, db_index=True)
+	posts_count = models.PositiveIntegerField(default=0)
 
 	def get_absolute_url(self):
 		return reverse("blog:channel-detail", kwargs={"channel_slug": self.slug})
@@ -138,7 +142,13 @@ class Post(models.Model):
 	body = models.TextField()
 	image = models.ImageField(upload_to="post_images/", blank=True, null=True)
 	tags = models.ManyToManyField("Tag", related_name="posts", blank=True)
+	is_published = models.BooleanField(default=True, db_index=True)
+	published_at = models.DateTimeField(null=True, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
+	view_count = models.PositiveIntegerField(default=0, db_index=True)
+	love_count = models.PositiveIntegerField(default=0, db_index=True)
+	comment_count = models.PositiveIntegerField(default=0, db_index=True)
+	saves_count = models.PositiveIntegerField(default=0)
 
 	class Meta:
 		constraints = [
@@ -186,6 +196,10 @@ class Post(models.Model):
 				slug = f"{base_slug}-{counter}"
 				counter += 1
 			self.slug = slug
+		if self.is_published and not self.published_at:
+			self.published_at = timezone.now()
+		if not self.is_published:
+			self.published_at = None
 		self.full_clean()
 		return super().save(*args, **kwargs)
 
@@ -195,6 +209,7 @@ class Comment(models.Model):
 	author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
 	body = models.TextField()
 	created_at = models.DateTimeField(auto_now_add=True)
+	love_count = models.PositiveIntegerField(default=0)
 
 	class Meta:
 		constraints = [

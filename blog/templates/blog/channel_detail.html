@@ -120,6 +120,66 @@
   </div>
 </div>
 
+{% if channel_analytics %}
+  <div class="card mb-4">
+    <div class="card-content">
+      <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap mb-3" style="gap: 0.5rem;">
+        <h2 class="title is-5 mb-0">
+          <span class="icon mr-2"><i class="fa-solid fa-chart-line"></i></span>
+          <span>Channel analytics</span>
+        </h2>
+        <div class="buttons has-addons are-small mb-0">
+          {% for link in analytics_window_links %}
+            <a
+              class="button {% if analytics_window == link.value %}is-link{% else %}is-light{% endif %}"
+              href="{% url 'blog:channel-detail' channel.slug %}?{{ link.query_string }}"
+              hx-boost="true"
+            >{{ link.label }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <h3 class="subtitle is-7 has-text-grey mb-3">Window: {{ channel_analytics.window_label }}</h3>
+      <div class="columns is-multiline is-mobile">
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ channel_analytics.total_posts }} posts</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ channel_analytics.total_followers }} followers</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-eye"></i></span>{{ channel_analytics.total_views }} views</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-bolt"></i></span>{{ channel_analytics.total_engagement }} engagements</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-heart"></i></span>{{ channel_analytics.total_loves }} loves</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-comments"></i></span>{{ channel_analytics.total_comments }} comments</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-bookmark"></i></span>{{ channel_analytics.total_saves }} saves</div>
+        </div>
+        <div class="column is-half-mobile is-one-quarter-tablet">
+          <div class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-calendar-week"></i></span>{{ channel_analytics.posts_in_window }} in window</div>
+        </div>
+      </div>
+      <p class="meta-text mt-2 mb-0">
+        Avg engagement per post: <strong>{{ channel_analytics.avg_engagement_per_post }}</strong>
+        <span class="mx-2">&middot;</span>
+        Engagement rate: <strong>{{ channel_analytics.engagement_rate }}%</strong>
+      </p>
+      {% if channel_analytics.top_post %}
+        <p class="meta-text mt-2 mb-0">
+          Top post:
+          <a href="{% url 'blog:post-detail' channel.slug channel_analytics.top_post.slug %}" hx-boost="true">{{ channel_analytics.top_post.title }}</a>
+        </p>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
 <h2 class="title is-5 comment-section-title">
   <span class="icon mr-2"><i class="fa-solid fa-clock-rotate-left"></i></span>
   <span>Recent posts</span>

@@ -4,7 +4,10 @@
 <header class="page-headline editor-shell">
   <p class="post-kicker mb-2">Editor</p>
   <h1 class="title is-3 mb-2"><span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span><span>{% if form.instance.pk %}Edit Post{% else %}Write New Post{% endif %}</span></h1>
-  <p class="page-kicker">Craft your story with a clear title, strong content, and optional cover image.</p>
+  <p class="page-kicker">Craft your story with a clear title, strong content, and optional cover image. Save as draft until it is ready.</p>
+  {% if form.instance.pk and not form.instance.is_published %}
+    <p class="mt-2"><span class="tag is-warning is-light">Draft</span></p>
+  {% endif %}
 </header>
 <div class="editor-form-card editor-shell post-editor-form">
   <form method="post" enctype="multipart/form-data">
@@ -40,9 +43,13 @@
       </div>
     {% endfor %}
     <div class="inline-actions mt-4 is-flex is-align-items-center is-flex-wrap-wrap">
-      <button class="button is-primary" type="submit">
-        <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
-        <span>Publish changes</span>
+      <button class="button is-primary" type="submit" name="action" value="publish">
+        <span class="icon"><i class="fa-solid fa-paper-plane"></i></span>
+        <span>Publish now</span>
+      </button>
+      <button class="button is-light" type="submit" name="action" value="draft">
+        <span class="icon"><i class="fa-solid fa-file-pen"></i></span>
+        <span>Save draft</span>
       </button>
       <a class="button is-light" href="{% if form.instance.pk %}{% url 'blog:post-detail' form.instance.channel.slug form.instance.slug %}{% else %}{% url 'blog:channel-list' %}{% endif %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>

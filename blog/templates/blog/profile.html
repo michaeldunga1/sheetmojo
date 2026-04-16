@@ -85,6 +85,13 @@
 </h2>
 
 <form method="get" action="{{ request.path }}" class="box mb-5">
+  {% if is_own_profile %}
+    <div class="buttons has-addons mb-3">
+      <a class="button {% if state_filter == 'all' %}is-link{% else %}is-light{% endif %}" href="?{% if search_query %}q={{ search_query|urlencode }}&amp;{% endif %}state=all" hx-boost="true">All ({{ user_post_count }})</a>
+      <a class="button {% if state_filter == 'published' %}is-link{% else %}is-light{% endif %}" href="?{% if search_query %}q={{ search_query|urlencode }}&amp;{% endif %}state=published" hx-boost="true">Published ({{ published_post_count }})</a>
+      <a class="button {% if state_filter == 'drafts' %}is-link{% else %}is-light{% endif %}" href="?{% if search_query %}q={{ search_query|urlencode }}&amp;{% endif %}state=drafts" hx-boost="true">Drafts ({{ draft_post_count }})</a>
+    </div>
+  {% endif %}
   <div class="field has-addons has-addons-right is-flex-wrap-wrap">
     <div class="control is-expanded">
       <input
@@ -92,6 +99,9 @@
         type="search"
         name="q"
         value="{{ search_query }}"
+        {% if is_own_profile %}
+          {% if state_filter != 'all' %}<input type="hidden" name="state" value="{{ state_filter }}">{% endif %}
+        {% endif %}
         placeholder="Search this author's posts by title, body, or channel"
         aria-label="Search posts by {{ profile_user.username }}"
       >
@@ -119,7 +129,10 @@
             <img src="{{ post.image.url }}" alt="{{ post.title }}">
           </a>
         {% endif %}
-        <p class="post-kicker">Published</p>
+        <p class="post-kicker">{% if post.is_published %}Published{% else %}Draft{% endif %}</p>
+        {% if not post.is_published %}
+          <p class="mb-2"><span class="tag is-warning is-light">Draft</span></p>
+        {% endif %}
         <h3 class="title is-5 mb-1"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">{{ post.title }}</a></h3>
         <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:32 }}</div>
         <p class="meta-text mb-2">
@@ -157,6 +170,10 @@
     <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>
     {% if search_query %}
       No posts matched "{{ search_query }}".
+    {% elif is_own_profile and state_filter == 'drafts' %}
+      You have no drafts yet.
+    {% elif is_own_profile and state_filter == 'published' %}
+      You have not published any posts yet.
     {% elif is_own_profile %}
       You have not posted anything yet.
     {% else %}
@@ -165,4 +182,30 @@
   </div>
 {% endfor %}
 </div>
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="Profile post pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <div class="pagination-list">
+      {% for num in paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></span>
+        {% else %}
+          <span><a class="pagination-link" aria-label="Go to page {{ num }}" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ num }}" hx-boost="true">{{ num }}</a></span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </nav>
+{% endif %}
 {% endblock %}

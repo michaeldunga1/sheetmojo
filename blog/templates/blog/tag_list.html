@@ -1,0 +1,113 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Browse Tags | SheetMojo{% endblock %}
+{% block meta_description %}Browse the most active topics and hashtags on SheetMojo.{% endblock %}
+{% block og_title %}Browse Tags | SheetMojo{% endblock %}
+{% block og_description %}Browse the most active topics and hashtags on SheetMojo.{% endblock %}
+{% block twitter_title %}Browse Tags | SheetMojo{% endblock %}
+{% block twitter_description %}Browse the most active topics and hashtags on SheetMojo.{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <p class="post-kicker mb-2">Explore</p>
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-tags"></i></span>
+    <span>Browse tags</span>
+  </h1>
+  <p class="page-kicker">Follow the strongest conversations by topic, keyword, and niche.</p>
+</header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search tags..."
+        aria-label="Search tags"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-link" type="submit" title="Search tags" aria-label="Search tags">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+    {% if search_query %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% if featured_tags and not search_query %}
+  <section class="card mb-5">
+    <div class="card-content">
+      <h2 class="title is-5 mb-3">
+        <span class="icon mr-2"><i class="fa-solid fa-fire"></i></span>
+        <span>Popular right now</span>
+      </h2>
+      <div class="tags are-medium">
+        {% for tag in featured_tags %}
+          <a href="{% url 'blog:tag-posts' tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ tag.name }} · {{ tag.post_count }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+<div class="columns is-multiline">
+  {% for tag in tags %}
+    <div class="column is-half-tablet is-one-third-desktop">
+      <article class="card h-100">
+        <div class="card-content">
+          <p class="post-kicker mb-2">Topic</p>
+          <h2 class="title is-5 mb-2">
+            <a class="has-text-dark" href="{% url 'blog:tag-posts' tag.slug %}" hx-boost="true">#{{ tag.name }}</a>
+          </h2>
+          <div class="is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 0.6rem;">
+            <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ tag.post_count }} post{{ tag.post_count|pluralize }}</span>
+            {% if tag.latest_post_at %}
+              <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ tag.latest_post_at|date:"M j, Y" }}</span>
+            {% endif %}
+          </div>
+          <div class="mt-4">
+            <a class="button is-light" href="{% url 'blog:tag-posts' tag.slug %}" hx-boost="true" title="Open tag page" aria-label="Open tag page">
+              <span class="icon"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+          </div>
+        </div>
+      </article>
+    </div>
+  {% empty %}
+    <div class="column is-12">
+      <div class="notification is-light">
+        <span class="icon mr-2"><i class="fa-regular fa-hashtag"></i></span>
+        {% if search_query %}
+          No tags matched "{{ search_query }}".
+        {% else %}
+          No tags yet.
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

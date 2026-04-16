@@ -62,6 +62,9 @@
     </div>
     <p class="inline-actions">
       {% if channel.owner == user %}
+      <a class="button is-light" href="{% url 'blog:draft-posts' %}" hx-boost="true" title="My drafts" aria-label="My drafts">
+        <span class="icon"><i class="fa-solid fa-file-pen"></i></span>
+      </a>
       <a class="button is-primary" href="{% url 'blog:post-create' channel.slug %}" hx-boost="true" title="Write post" aria-label="Write post">
         <span class="icon"><i class="fa-solid fa-square-plus"></i></span>
       </a>

@@ -13,7 +13,13 @@
     <span class="icon mr-2"><i class="fa-solid fa-tag"></i></span>
     <span>#{{ tag.name }}</span>
   </h1>
-  <p class="page-kicker">All posts tagged with #{{ tag.name }}.</p>
+  <p class="page-kicker">{{ tag_post_count }} post{{ tag_post_count|pluralize }} tagged with #{{ tag.name }}.</p>
+  <div class="mt-3">
+    <a class="button is-light" href="{% url 'blog:tag-list' %}" hx-boost="true">
+      <span class="icon"><i class="fa-solid fa-tags"></i></span>
+      <span>Browse all tags</span>
+    </a>
+  </div>
 </header>
 
 <form method="get" action="{{ request.path }}" class="box mb-5">
@@ -40,6 +46,38 @@
     {% endif %}
   </div>
 </form>
+
+{% if related_tags %}
+  <section class="card mb-5">
+    <div class="card-content">
+      <h2 class="title is-5 mb-3">
+        <span class="icon mr-2"><i class="fa-solid fa-diagram-project"></i></span>
+        <span>Related tags</span>
+      </h2>
+      <div class="tags are-medium">
+        {% for related_tag in related_tags %}
+          <a href="{% url 'blog:tag-posts' related_tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ related_tag.name }} · {{ related_tag.post_count }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+{% if popular_tags %}
+  <section class="card mb-5">
+    <div class="card-content">
+      <h2 class="title is-5 mb-3">
+        <span class="icon mr-2"><i class="fa-solid fa-fire"></i></span>
+        <span>Popular tags</span>
+      </h2>
+      <div class="tags are-medium">
+        {% for popular_tag in popular_tags %}
+          <a href="{% url 'blog:tag-posts' popular_tag.slug %}" class="tag is-light" hx-boost="true">#{{ popular_tag.name }} · {{ popular_tag.post_count }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endif %}
 
 {% include "blog/post_list_content.html" %}
 {% endblock %}
