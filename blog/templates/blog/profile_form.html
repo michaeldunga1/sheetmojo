@@ -37,17 +37,15 @@
     {% endfor %}
 
     <div class="inline-actions mt-5 is-flex is-align-items-center is-flex-wrap-wrap">
-      <button class="button is-primary" type="submit">
+      <button class="button is-primary" type="submit" title="Save changes" aria-label="Save changes">
         <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
-        <span>Save changes</span>
       </button>
       <a class="button is-light" href="{% url 'blog:profile' %}">
         <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
         <span>Back to profile</span>
       </a>
-      <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}">
+      <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}" title="Delete account" aria-label="Delete account">
         <span class="icon"><i class="fa-solid fa-user-xmark"></i></span>
-        <span>Delete account</span>
       </a>
     </div>
   </form>

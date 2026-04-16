@@ -10,12 +10,48 @@
 
 {% block content %}
 <header class="page-headline">
-  <h1 class="title is-3 mb-2">
-    <span class="icon mr-2"><i class="fa-solid fa-user-check"></i></span>
-    <span>Your Reading Feed</span>
-  </h1>
-  <p class="page-kicker">A combined stream from channels you follow and posts you authored.</p>
+  <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap">
+    <div>
+      <h1 class="title is-3 mb-2">
+        <span class="icon mr-2"><i class="fa-solid fa-user-check"></i></span>
+        <span>Your Reading Feed</span>
+      </h1>
+      <p class="page-kicker">A combined stream from channels you follow and posts you authored.</p>
+    </div>
+    <p>
+      <a class="button is-light" href="{% url 'blog:followed-channels' %}" hx-boost="true" aria-label="Open followed channels">
+        <span class="icon"><i class="fa-solid fa-heart-circle-check"></i></span>
+        <span>Followed Channels</span>
+        <span class="tag is-info is-light ml-2">{{ followed_channel_count }}</span>
+      </a>
+    </p>
+  </div>
 </header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search feed by title, body, author, or channel"
+        aria-label="Search posts in your reading feed"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit" title="Search" aria-label="Search">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+    {% if search_query %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
 
 {% include 'blog/following_posts_content.html' %}
 {% endblock %}

@@ -74,14 +74,15 @@
     {% endif %}
 
     <div class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
-      <a class="button is-link" href="{% url 'blog:post-list' channel.slug %}" hx-boost="true">
+      <a class="button is-link" href="{% url 'blog:post-list' channel.slug %}" hx-boost="true" title="Open posts" aria-label="Open posts">
         <span class="icon"><i class="fa-solid fa-list"></i></span>
-        <span>Open posts</span>
       </a>
+      {% if channel.owner == user %}
       <a class="button is-primary" href="{% url 'blog:post-create' channel.slug %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-square-plus"></i></span>
         <span>Write post</span>
       </a>
+      {% endif %}
       <a class="button is-light" href="{% url 'blog:channel-list' %}" hx-boost="true">
         <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
         <span>All channels</span>
@@ -92,31 +93,27 @@
           <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" class="inline-form" hx-boost="true">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button class="button is-info is-light" type="submit">
+            <button class="button is-info is-light" type="submit" title="Unfollow" aria-label="Unfollow">
               <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
-              <span>Following</span>
             </button>
           </form>
         {% else %}
           <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" class="inline-form" hx-boost="true">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button class="button is-info" type="submit">
+            <button class="button is-info" type="submit" title="Follow" aria-label="Follow">
               <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
-              <span>Follow</span>
             </button>
           </form>
         {% endif %}
       {% endif %}
 
       {% if channel.owner == user %}
-        <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}" hx-boost="true">
+        <a class="button is-warning is-light" href="{% url 'blog:channel-edit' channel.slug %}" hx-boost="true" title="Edit" aria-label="Edit">
           <span class="icon"><i class="fa-solid fa-pen"></i></span>
-          <span>Edit</span>
         </a>
-        <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}" hx-boost="true">
+        <a class="button is-danger is-light" href="{% url 'blog:channel-delete' channel.slug %}" hx-boost="true" title="Delete" aria-label="Delete">
           <span class="icon"><i class="fa-solid fa-trash"></i></span>
-          <span>Delete</span>
         </a>
       {% endif %}
     </div>
@@ -146,9 +143,8 @@
           <span class="mx-2">&middot;</span>
           <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
         </p>
-        <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
+        <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" title="Read article" aria-label="Read article">
           <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
-          <span>Read article</span>
         </a>
       </div>
     </div>

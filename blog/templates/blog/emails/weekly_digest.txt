@@ -1,0 +1,21 @@
+Hi {{ user.username }},
+
+Here is your SheetMojo weekly digest (since {{ since|date:"M j, Y" }}).
+
+{% if recent_posts %}Recent posts from channels you follow:
+{% for post in recent_posts %}- {{ post.title }} by {{ post.author.username }} in {{ post.channel.name }}
+  {{ post.get_absolute_url }}
+{% endfor %}
+{% else %}No new posts from followed channels this week.
+{% endif %}
+
+{% if unread_notifications %}Unread notifications:
+{% for notification in unread_notifications %}- {{ notification.message }}
+  {% if notification.target_url %}{{ notification.target_url }}{% endif %}
+{% endfor %}
+{% else %}No unread notifications right now.
+{% endif %}
+
+Open your feed: /blog/following/posts/
+
+- SheetMojo

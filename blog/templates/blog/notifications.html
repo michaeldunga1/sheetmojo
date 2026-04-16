@@ -1,0 +1,217 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Notifications | SheetMojo{% endblock %}
+{% block meta_description %}Your latest activity alerts for follows, new posts, and comments.{% endblock %}
+{% block og_title %}Notifications | SheetMojo{% endblock %}
+{% block og_description %}Your latest activity alerts for follows, new posts, and comments.{% endblock %}
+{% block twitter_title %}Notifications | SheetMojo{% endblock %}
+{% block twitter_description %}Your latest activity alerts for follows, new posts, and comments.{% endblock %}
+{% block meta_robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap">
+    <div>
+      <h1 class="title is-3 mb-2">
+        <span class="icon mr-2"><i class="fa-solid fa-bell"></i></span>
+        <span>Notifications</span>
+      </h1>
+      <p class="page-kicker">Track follows, new posts in followed channels, and comments on your posts.</p>
+    </div>
+    <form method="post" action="{% url 'blog:notifications-read-all' %}" class="inline-form" hx-boost="true">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="button is-light" type="submit" title="Mark all as read" aria-label="Mark all as read">
+        <span class="icon"><i class="fa-solid fa-envelope-open"></i></span>
+      </button>
+    </form>
+  </div>
+</header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search notifications by actor or message"
+        aria-label="Search notifications"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <span>Apply</span>
+      </button>
+    </div>
+    <div class="control">
+      <div class="select">
+        <select name="status" aria-label="Filter by read status">
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All status</option>
+          <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>Unread</option>
+          <option value="read" {% if status_filter == 'read' %}selected{% endif %}>Read</option>
+        </select>
+      </div>
+    </div>
+    <div class="control">
+      <div class="select">
+        <select name="type" aria-label="Filter by notification type">
+          {% for value, label in type_choices %}
+            <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% if search_query or status_filter != 'all' or type_filter != 'all' %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% if notifications %}
+  <form method="post" action="{% url 'blog:notifications-batch' %}" class="mb-4" hx-boost="true">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div class="box">
+      <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap">
+        <p class="meta-text mb-0">
+          <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>Batch actions for selected notifications on this page
+        </p>
+        <div class="inline-actions">
+          <button class="button is-light" type="button" data-select="all">
+            <span class="icon"><i class="fa-solid fa-square-check"></i></span>
+            <span>Select all</span>
+          </button>
+          <button class="button is-light" type="button" data-select="none">
+            <span class="icon"><i class="fa-regular fa-square"></i></span>
+            <span>Select none</span>
+          </button>
+          <button class="button is-light" type="submit" name="action" value="mark_read" title="Mark read" aria-label="Mark read">
+            <span class="icon"><i class="fa-solid fa-check"></i></span>
+          </button>
+          <button class="button is-light" type="submit" name="action" value="mark_unread" title="Mark unread" aria-label="Mark unread">
+            <span class="icon"><i class="fa-regular fa-envelope"></i></span>
+          </button>
+          <button class="button is-danger is-light" type="submit" name="action" value="delete" onclick="return confirm('Delete selected notifications?');" title="Delete selected" aria-label="Delete selected">
+            <span class="icon"><i class="fa-solid fa-trash"></i></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {% regroup notifications by created_at.date as grouped_notifications %}
+    {% for group in grouped_notifications %}
+      <h2 class="title is-6 mt-5 mb-3">
+        <span class="icon mr-2"><i class="fa-regular fa-calendar"></i></span>
+        <span>{{ group.grouper|date:"l, M j, Y" }}</span>
+      </h2>
+      {% for notification in group.list %}
+        <article class="card{% if not notification.is_read %} card-pinned{% endif %} mb-3">
+          <div class="card-content">
+            <div class="is-flex is-justify-content-space-between is-align-items-start is-flex-wrap-wrap mb-2">
+              <div class="is-flex is-align-items-center">
+                <label class="checkbox mr-3" aria-label="Select notification {{ notification.pk }}">
+                  <input type="checkbox" name="notification_ids" value="{{ notification.pk }}">
+                </label>
+                <p class="meta-text mb-0">
+                  <span class="icon mr-1"><i class="fa-solid fa-circle-info"></i></span>
+                  {% if notification.notification_type == 'follow' %}
+                    New follower
+                  {% elif notification.notification_type == 'new_post' %}
+                    New post
+                  {% else %}
+                    New comment
+                  {% endif %}
+                  {% if not notification.is_read %}
+                    <span class="tag is-danger is-light ml-2">Unread</span>
+                  {% endif %}
+                </p>
+              </div>
+              <span class="meta-text">
+                <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ notification.created_at|date:"g:i A" }}
+              </span>
+            </div>
+            <p class="mb-3">{{ notification.message }}</p>
+            <div class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
+              {% if notification.target_url %}
+                <a class="button is-link is-light" href="{{ notification.target_url }}" hx-boost="true" title="Open" aria-label="Open">
+                  <span class="icon"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                </a>
+              {% endif %}
+              {% if not notification.is_read %}
+                <form method="post" action="{% url 'blog:notification-read' notification.pk %}" class="inline-form" hx-boost="true">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button class="button is-light" type="submit" title="Mark read" aria-label="Mark read">
+                    <span class="icon"><i class="fa-solid fa-check"></i></span>
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    {% endfor %}
+  </form>
+{% else %}
+  <div class="notification is-light">
+    <span class="icon mr-2"><i class="fa-regular fa-bell-slash"></i></span>
+    {% if search_query or status_filter != 'all' or type_filter != 'all' %}
+      No notifications matched your filters.
+    {% else %}
+      You do not have any notifications yet.
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if is_paginated %}
+  <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if page_obj.has_previous %}
+      <a class="pagination-previous" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+    {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a class="pagination-next" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
+    {% else %}
+      <a class="pagination-next" disabled>Next page</a>
+    {% endif %}
+
+    <div class="pagination-list">{% for num in paginator.page_range %}{% if page_obj.number == num %}<span><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></span>{% else %}<span><a class="pagination-link" aria-label="Goto page {{ num }}" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ num }}" hx-boost="true">{{ num }}</a></span>{% endif %}{% endfor %}</div>
+  </nav>
+{% endif %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const batchForm = document.querySelector('form[action*="notifications/batch"]');
+    if (!batchForm) {
+      return;
+    }
+
+    const checkboxes = () => batchForm.querySelectorAll('input[name="notification_ids"]');
+    const selectAllBtn = batchForm.querySelector('[data-select="all"]');
+    const selectNoneBtn = batchForm.querySelector('[data-select="none"]');
+
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener("click", function () {
+        checkboxes().forEach(function (checkbox) {
+          checkbox.checked = true;
+        });
+      });
+    }
+
+    if (selectNoneBtn) {
+      selectNoneBtn.addEventListener("click", function () {
+        checkboxes().forEach(function (checkbox) {
+          checkbox.checked = false;
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

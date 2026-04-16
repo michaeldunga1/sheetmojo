@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Channel, ChannelFollow, Comment, Post, Profile
+from .models import Channel, ChannelFollow, Comment, Notification, Post, Profile, SavedPost
 
 
 @admin.register(Profile)
@@ -31,3 +31,15 @@ class PostAdmin(admin.ModelAdmin):
 class CommentAdmin(admin.ModelAdmin):
 	list_display = ("id", "post", "author", "created_at")
 	search_fields = ("post__title", "author__username")
+
+
+@admin.register(SavedPost)
+class SavedPostAdmin(admin.ModelAdmin):
+	list_display = ("id", "user", "post", "created_at")
+	search_fields = ("user__username", "post__title", "post__channel__name")
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+	list_display = ("id", "recipient", "actor", "notification_type", "is_read", "created_at")
+	search_fields = ("recipient__username", "actor__username", "message")

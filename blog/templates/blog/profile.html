@@ -34,6 +34,8 @@
       <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Joined {{ profile_user.date_joined|date:"M j, Y" }}</span>
       <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>{{ user_channel_count }} channel{{ user_channel_count|pluralize }}</span>
       <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ user_post_count }} post{{ user_post_count|pluralize }}</span>
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ user_follower_count }} follower{{ user_follower_count|pluralize }}</span>
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-plus"></i></span>{{ user_following_count }} following</span>
     </div>
     {% if profile_obj %}
       <p class="meta-text mb-2">
@@ -46,14 +48,32 @@
     {% endif %}
     {% if is_own_profile %}
       <div class="inline-actions mt-4 is-flex is-align-items-center is-flex-wrap-wrap">
-        <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}" hx-boost="true">
+        <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}" hx-boost="true" title="Edit profile" aria-label="Edit profile">
           <span class="icon"><i class="fa-solid fa-user-pen"></i></span>
-          <span>Edit profile</span>
         </a>
-        <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}" hx-boost="true">
+        <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}" hx-boost="true" title="Delete account" aria-label="Delete account">
           <span class="icon"><i class="fa-solid fa-user-xmark"></i></span>
-          <span>Delete account</span>
         </a>
+      </div>
+    {% else %}
+      <div class="inline-actions mt-4">
+        {% if is_following_user %}
+          <form method="post" action="{% url 'blog:user-unfollow' username=profile_user.username %}" style="display:inline">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="button is-light" title="Unfollow" aria-label="Unfollow">
+              <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'blog:user-follow' username=profile_user.username %}" style="display:inline">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="button is-info is-light" title="Follow" aria-label="Follow">
+              <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
+            </button>
+          </form>
+        {% endif %}
       </div>
     {% endif %}
   </div>
@@ -63,6 +83,31 @@
   <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
   <span>{% if is_own_profile %}My Posts{% else %}Posts by {{ profile_user.username }}{% endif %}</span>
 </h2>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search this author's posts by title, body, or channel"
+        aria-label="Search posts by {{ profile_user.username }}"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit" title="Search" aria-label="Search">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+    {% if search_query %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
 
 <div class="post-stream">
 {% for post in user_posts %}
@@ -82,17 +127,41 @@
           <span class="mx-2">&middot;</span>
           <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
         </p>
-        <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
+        <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" title="Read article" aria-label="Read article">
           <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
-          <span>Read article</span>
         </a>
+        {% if user.is_authenticated %}
+          {% if post.id in saved_post_ids %}
+            <form method="post" action="{% url 'blog:post-unsave' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-warning is-light" type="submit" aria-label="Unsave post" title="Unsave post">
+                <span class="icon"><i class="fa-solid fa-bookmark"></i></span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:post-save' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-warning" type="submit" aria-label="Save post" title="Save post">
+                <span class="icon"><i class="fa-regular fa-bookmark"></i></span>
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
       </div>
     </div>
   </article>
 {% empty %}
   <div class="notification is-light">
     <span class="icon mr-2"><i class="fa-regular fa-face-meh"></i></span>
-    {% if is_own_profile %}You have not posted anything yet.{% else %}This user has not posted anything yet.{% endif %}
+    {% if search_query %}
+      No posts matched "{{ search_query }}".
+    {% elif is_own_profile %}
+      You have not posted anything yet.
+    {% else %}
+      This user has not posted anything yet.
+    {% endif %}
   </div>
 {% endfor %}
 </div>

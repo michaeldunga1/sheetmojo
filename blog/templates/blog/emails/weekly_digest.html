@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+    <h2 style="margin-bottom: 8px;">Hi {{ user.username }},</h2>
+    <p style="margin-top: 0;">Here is your SheetMojo weekly digest (since {{ since|date:"M j, Y" }}).</p>
+
+    <h3 style="margin-bottom: 8px;">Recent posts from followed channels</h3>
+    {% if recent_posts %}
+      <ul>
+        {% for post in recent_posts %}
+          <li>
+            <strong>{{ post.title }}</strong> by {{ post.author.username }} in {{ post.channel.name }}<br>
+            <a href="{{ post.get_absolute_url }}">Open post</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No new posts from followed channels this week.</p>
+    {% endif %}
+
+    <h3 style="margin-bottom: 8px;">Unread notifications</h3>
+    {% if unread_notifications %}
+      <ul>
+        {% for notification in unread_notifications %}
+          <li>
+            {{ notification.message }}
+            {% if notification.target_url %}
+              <br><a href="{{ notification.target_url }}">Open</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No unread notifications right now.</p>
+    {% endif %}
+
+    <p>
+      <a href="/blog/following/posts/">Open your feed</a>
+    </p>
+  </body>
+</html>

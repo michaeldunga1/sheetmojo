@@ -61,17 +61,42 @@
       <p class="page-kicker">Recent stories, updates, and discussions from this channel.</p>
     </div>
     <p class="inline-actions">
-      <a class="button is-primary" href="{% url 'blog:post-create' channel.slug %}" hx-boost="true">
+      {% if channel.owner == user %}
+      <a class="button is-primary" href="{% url 'blog:post-create' channel.slug %}" hx-boost="true" title="Write post" aria-label="Write post">
         <span class="icon"><i class="fa-solid fa-square-plus"></i></span>
-        <span>Write post</span>
       </a>
-      <a class="button is-light" href="{% url 'blog:channel-list' %}" hx-boost="true">
+      {% endif %}
+      <a class="button is-light" href="{% url 'blog:channel-list' %}" hx-boost="true" title="Channels" aria-label="Channels">
         <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
-        <span>Channels</span>
       </a>
     </p>
   </div>
 </header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search this channel's posts by title, body, or author"
+        aria-label="Search posts in {{ channel.name }}"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit" title="Search" aria-label="Search">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+    {% if search_query %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
 
 {% include 'blog/post_list_content.html' %}
 {% endblock %}

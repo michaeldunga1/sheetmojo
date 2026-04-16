@@ -75,7 +75,17 @@
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a></span>
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a></span>
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}</span>
+    <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-book-open"></i></span>{{ post.reading_time_minutes }} min read</span>
   </div>
+  {% with post_tags=post.tags.all %}
+    {% if post_tags %}
+      <div class="tags mt-2">
+        {% for tag in post_tags %}
+          <a href="{% url 'blog:tag-posts' tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ tag.name }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 </header>
 
 <div class="card">
@@ -113,14 +123,50 @@
           <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
           <span>More from this channel</span>
         </a>
-        {% if post.author == user %}
-          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.channel.slug post.slug %}" hx-boost="true">
+        {% if user.is_authenticated %}
+          {% if is_post_saved %}
+            <form method="post" action="{% url 'blog:post-unsave' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-warning is-light" type="submit" aria-label="Unsave post" title="Unsave post">
+                <span class="icon"><i class="fa-solid fa-bookmark"></i></span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:post-save' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-warning" type="submit" aria-label="Save post" title="Save post">
+                <span class="icon"><i class="fa-regular fa-bookmark"></i></span>
+              </button>
+            </form>
+          {% endif %}
+          {% if is_post_loved %}
+            <form method="post" action="{% url 'blog:post-unlove' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-danger is-light" type="submit" aria-label="Remove love reaction" title="Remove love reaction">
+                <span class="icon"><i class="fa-solid fa-heart"></i></span>
+                <span>Loved{% if love_count %} · {{ love_count }}{% endif %}</span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:post-love' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-danger" type="submit" aria-label="Love this post" title="Love this post">
+                <span class="icon"><i class="fa-regular fa-heart"></i></span>
+                <span>Love{% if love_count %} · {{ love_count }}{% endif %}</span>
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+        {% if post.channel.owner == user %}
+          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.channel.slug post.slug %}" hx-boost="true" title="Edit post" aria-label="Edit post">
             <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
-            <span>Edit post</span>
           </a>
-          <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.channel.slug post.slug %}" hx-boost="true">
+          <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.channel.slug post.slug %}" hx-boost="true" title="Delete post" aria-label="Delete post">
             <span class="icon"><i class="fa-solid fa-trash"></i></span>
-            <span>Delete post</span>
           </a>
         {% endif %}
       </div>
@@ -135,14 +181,12 @@
   </h2>
   {% if user.is_authenticated %}
     {% if user_comment %}
-      <a class="button is-warning is-light" href="{% url 'blog:comment-edit' user_comment.pk %}" hx-boost="true">
+      <a class="button is-warning is-light" href="{% url 'blog:comment-edit' user_comment.pk %}" hx-boost="true" title="Edit comment" aria-label="Edit comment">
         <span class="icon"><i class="fa-solid fa-pen"></i></span>
-        <span>Edit comment</span>
       </a>
     {% else %}
-      <a class="button is-primary" href="{% url 'blog:comment-create' post.channel.slug post.slug %}" hx-boost="true">
+      <a class="button is-primary" href="{% url 'blog:comment-create' post.channel.slug post.slug %}" hx-boost="true" title="Add comment" aria-label="Add comment">
         <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
-        <span>Add comment</span>
       </a>
     {% endif %}
   {% else %}
@@ -164,6 +208,35 @@
         <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ user_comment.created_at|date:"M j, Y g:i A" }}
         <span class="tag is-info is-light ml-2">Your comment</span>
       </p>
+      <div class="inline-actions mt-3">
+        {% if user.is_authenticated %}
+          {% if user_comment.user_loved %}
+            <form method="post" action="{% url 'blog:comment-unlove' user_comment.pk %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-danger is-light" type="submit">
+                <span class="icon"><i class="fa-solid fa-heart"></i></span>
+                <span>Loved{% if user_comment.love_count %} · {{ user_comment.love_count }}{% endif %}</span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:comment-love' user_comment.pk %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-danger" type="submit">
+                <span class="icon"><i class="fa-regular fa-heart"></i></span>
+                <span>Love{% if user_comment.love_count %} · {{ user_comment.love_count }}{% endif %}</span>
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+        <a class="button is-warning is-light" href="{% url 'blog:comment-edit' user_comment.pk %}" hx-boost="true" title="Edit" aria-label="Edit">
+          <span class="icon"><i class="fa-solid fa-pen"></i></span>
+        </a>
+        <a class="button is-danger is-light" href="{% url 'blog:comment-delete' user_comment.pk %}" hx-boost="true" title="Delete" aria-label="Delete">
+          <span class="icon"><i class="fa-solid fa-trash"></i></span>
+        </a>
+      </div>
     </div>
   </div>
 {% endif %}
@@ -178,6 +251,37 @@
         <span class="mx-2">&middot;</span>
         <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ comment.created_at|date:"M j, Y g:i A" }}
       </p>
+      <div class="inline-actions mt-3">
+        {% if user.is_authenticated %}
+          {% if comment.user_loved %}
+            <form method="post" action="{% url 'blog:comment-unlove' comment.pk %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-danger is-light" type="submit">
+                <span class="icon"><i class="fa-solid fa-heart"></i></span>
+                <span>Loved{% if comment.love_count %} · {{ comment.love_count }}{% endif %}</span>
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'blog:comment-love' comment.pk %}" class="inline-form" hx-boost="true">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="button is-danger" type="submit">
+                <span class="icon"><i class="fa-regular fa-heart"></i></span>
+                <span>Love{% if comment.love_count %} · {{ comment.love_count }}{% endif %}</span>
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+        {% if comment.author == user %}
+          <a class="button is-warning is-light" href="{% url 'blog:comment-edit' comment.pk %}" hx-boost="true" title="Edit" aria-label="Edit">
+            <span class="icon"><i class="fa-solid fa-pen"></i></span>
+          </a>
+          <a class="button is-danger is-light" href="{% url 'blog:comment-delete' comment.pk %}" hx-boost="true" title="Delete" aria-label="Delete">
+            <span class="icon"><i class="fa-solid fa-trash"></i></span>
+          </a>
+        {% endif %}
+      </div>
     </div>
   </div>
 {% empty %}

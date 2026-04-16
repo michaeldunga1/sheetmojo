@@ -12,54 +12,96 @@
         {% endif %}
         <p class="post-kicker">Article</p>
         <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">{{ post.title }}</a></h3>
+        {% with post_tags=post.tags.all %}
+          {% if post_tags %}
+            <div class="tags mb-2">
+              {% for tag in post_tags %}
+                <a href="{% url 'blog:tag-posts' tag.slug %}" class="tag is-link is-light" hx-boost="true">#{{ tag.name }}</a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
         <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:40 }}</div>
         <p class="meta-text mb-3">
           <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>By <a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a>
           <span class="mx-2">&middot;</span>
           <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
+          <span class="mx-2">&middot;</span>
+          <span class="icon mr-1"><i class="fa-solid fa-book-open"></i></span>{{ post.reading_time_minutes }} min read
+          {% if show_popularity_metrics %}
+            <span class="mx-2">&middot;</span>
+            <span class="icon mr-1"><i class="fa-solid fa-heart"></i></span>{{ post.love_count|default:0 }} loves
+            <span class="mx-2">&middot;</span>
+            <span class="icon mr-1"><i class="fa-solid fa-comments"></i></span>{{ post.comment_count|default:0 }} comments
+          {% endif %}
         </p>
         <p class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
-          {% if post.author == user %}
-            <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.channel.slug post.slug %}" hx-boost="true">
+          {% if user.is_authenticated %}
+            {% if post.id in saved_post_ids %}
+              <form method="post" action="{% url 'blog:post-unsave' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="button is-warning is-light" type="submit" aria-label="Unsave post" title="Unsave post">
+                  <span class="icon"><i class="fa-solid fa-bookmark"></i></span>
+                </button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'blog:post-save' post.channel.slug post.slug %}" class="inline-form" hx-boost="true">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="button is-warning" type="submit" aria-label="Save post" title="Save post">
+                  <span class="icon"><i class="fa-regular fa-bookmark"></i></span>
+                </button>
+              </form>
+            {% endif %}
+          {% endif %}
+          {% if post.channel.owner == user %}
+            <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.channel.slug post.slug %}" hx-boost="true" title="Edit post" aria-label="Edit post">
               <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
-              <span>Edit post</span>
             </a>
-            <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.channel.slug post.slug %}" hx-boost="true">
+            <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.channel.slug post.slug %}" hx-boost="true" title="Delete post" aria-label="Delete post">
               <span class="icon"><i class="fa-solid fa-trash"></i></span>
-              <span>Delete post</span>
             </a>
           {% endif %}
           <a class="button is-link is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
             <span class="icon"><i class="fa-solid fa-comments"></i></span>
             <span>Comments ({{ post.comments.count }})</span>
           </a>
-          <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">
+          <a class="button is-light" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" title="Read article" aria-label="Read article">
             <span class="icon"><i class="fa-solid fa-book-open-reader"></i></span>
-            <span>Read article</span>
           </a>
         </p>
       </div>
     </div>
   </article>
 {% empty %}
-  <div class="notification is-light"><span class="icon mr-2"><i class="fa-regular fa-newspaper"></i></span>No posts yet.</div>
+  <div class="notification is-light">
+    <span class="icon mr-2"><i class="fa-regular fa-newspaper"></i></span>
+    {% if search_query %}
+      No posts matched "{{ search_query }}".
+    {% elif request.resolver_match.url_name == 'saved-posts' %}
+      You have not saved any posts yet.
+    {% else %}
+      No posts yet.
+    {% endif %}
+  </div>
 {% endfor %}
 </div>
 
 {% if is_paginated %}
   <nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
     {% if page_obj.has_previous %}
-      <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
+      <a class="pagination-previous" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" hx-boost="true">Previous</a>
     {% else %}
       <a class="pagination-previous" disabled>Previous</a>
     {% endif %}
 
     {% if page_obj.has_next %}
-      <a class="pagination-next" href="?page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
+      <a class="pagination-next" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" hx-boost="true">Next page</a>
     {% else %}
       <a class="pagination-next" disabled>Next page</a>
     {% endif %}
 
-    <div class="pagination-list">{% for num in paginator.page_range %}{% if page_obj.number == num %}<span><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></span>{% else %}<span><a class="pagination-link" aria-label="Goto page {{ num }}" href="?page={{ num }}" hx-boost="true">{{ num }}</a></span>{% endif %}{% endfor %}</div>
+    <div class="pagination-list">{% for num in paginator.page_range %}{% if page_obj.number == num %}<span><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></span>{% else %}<span><a class="pagination-link" aria-label="Goto page {{ num }}" href="?{% if page_query_string %}{{ page_query_string }}&amp;{% endif %}page={{ num }}" hx-boost="true">{{ num }}</a></span>{% endif %}{% endfor %}</div>
   </nav>
 {% endif %}

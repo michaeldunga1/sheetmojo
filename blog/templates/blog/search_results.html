@@ -1,0 +1,144 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Search Results{% if search_query %} — "{{ search_query }}"{% endif %} | SheetMojo{% endblock %}
+{% block meta_description %}Search results for{% if search_query %} "{{ search_query }}"{% else %} SheetMojo{% endif %}.{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-magnifying-glass"></i></span>
+    <span>Search Results</span>
+  </h1>
+  {% if search_query %}
+    <p class="page-kicker">Results for "{{ search_query }}"</p>
+  {% else %}
+    <p class="page-kicker">Enter a search to find posts, channels, and people.</p>
+  {% endif %}
+</header>
+
+<form method="get" action="{% url 'blog:search' %}" class="box mb-5">
+  <div class="field has-addons is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search posts, channels, and people…"
+        aria-label="Search"
+        autofocus
+      >
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit" title="Search" aria-label="Search">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+  </div>
+</form>
+
+{% if search_query %}
+  {% if posts or channels or users %}
+    {% if posts %}
+      <div class="mb-6">
+        <h2 class="title is-5 mb-3">
+          <span class="icon mr-2"><i class="fa-solid fa-newspaper"></i></span>
+          <span>Posts ({{ posts|length }})</span>
+        </h2>
+        {% include 'blog/post_list_content.html' with posts=posts %}
+      </div>
+    {% endif %}
+
+    {% if channels %}
+      <div class="mb-6">
+        <h2 class="title is-5 mb-3">
+          <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
+          <span>Channels ({{ channels|length }})</span>
+        </h2>
+        <div class="channel-grid">
+          {% for channel in channels %}
+            <div class="card">
+              <div class="card-content">
+                <p class="title is-5 mb-2">{{ channel.name }}</p>
+                {% if channel.intro %}
+                  <p class="mb-2 is-size-7">{{ channel.intro }}</p>
+                {% endif %}
+                <p class="meta-text mb-3">
+                  <span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' channel.owner.username %}" hx-boost="true">{{ channel.owner.username }}</a>
+                  <span class="mx-2">&middot;</span>
+                  <span class="icon mr-1"><i class="fa-solid fa-people-group"></i></span>{{ channel.follower_count }} follower{{ channel.follower_count|pluralize }}
+                </p>
+                <div class="inline-actions">
+                  <a class="button is-link is-light" href="{% url 'blog:channel-detail' channel.slug %}" hx-boost="true" title="View" aria-label="View">
+                    <span class="icon"><i class="fa-solid fa-arrow-right"></i></span>
+                  </a>
+                  {% if channel.owner == user %}
+                    <span class="tag is-info is-light">Your channel</span>
+                  {% elif channel.id in followed_channel_ids %}
+                    <form method="post" action="{% url 'blog:channel-unfollow' channel.slug %}" class="inline-form" hx-boost="true">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button class="button is-info is-light" type="submit" title="Unfollow" aria-label="Unfollow">
+                        <span class="icon"><i class="fa-solid fa-heart-circle-check"></i></span>
+                      </button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{% url 'blog:channel-follow' channel.slug %}" class="inline-form" hx-boost="true">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button class="button is-info" type="submit" title="Follow" aria-label="Follow">
+                        <span class="icon"><i class="fa-solid fa-heart"></i></span>
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if users %}
+      <div class="mb-6">
+        <h2 class="title is-5 mb-3">
+          <span class="icon mr-2"><i class="fa-solid fa-people"></i></span>
+          <span>People ({{ users|length }})</span>
+        </h2>
+        <div class="user-grid">
+          {% for search_user in users %}
+            <div class="card">
+              <div class="card-content">
+                <p class="title is-5 mb-2">
+                  <a href="{% url 'blog:user-profile' search_user.username %}" hx-boost="true">{{ search_user.username }}</a>
+                </p>
+                {% if search_user.first_name or search_user.last_name %}
+                  <p class="is-size-7 mb-2">{{ search_user.first_name }} {{ search_user.last_name }}</p>
+                {% endif %}
+                {% if search_user.profile.about_me %}
+                  <p class="mb-3 is-size-7">{{ search_user.profile.about_me|truncatewords:20 }}</p>
+                {% endif %}
+                <div class="inline-actions">
+                  <a class="button is-link is-light" href="{% url 'blog:user-profile' search_user.username %}" hx-boost="true" title="View Profile" aria-label="View Profile">
+                    <span class="icon"><i class="fa-solid fa-arrow-right"></i></span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="notification is-light">
+      <span class="icon mr-2"><i class="fa-regular fa-circle-xmark"></i></span>
+      No results found for "{{ search_query }}". Try different keywords.
+    </div>
+  {% endif %}
+{% else %}
+  <div class="notification is-light">
+    <span class="icon mr-2"><i class="fa-regular fa-magnifying-glass"></i></span>
+    Use the search box above to discover posts, channels, and people.
+  </div>
+{% endif %}
+{% endblock %}

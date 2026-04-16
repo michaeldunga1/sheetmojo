@@ -1,0 +1,72 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Trending Posts | SheetMojo{% endblock %}
+{% block meta_description %}Discover trending posts by loves, comments, or newest activity.{% endblock %}
+{% block og_title %}Trending Posts | SheetMojo{% endblock %}
+{% block og_description %}Discover trending posts by loves, comments, or newest activity.{% endblock %}
+{% block twitter_title %}Trending Posts | SheetMojo{% endblock %}
+{% block twitter_description %}Discover trending posts by loves, comments, or newest activity.{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap">
+    <div>
+      <h1 class="title is-3 mb-2">
+        <span class="icon mr-2"><i class="fa-solid fa-fire"></i></span>
+        <span>Trending Posts</span>
+      </h1>
+      <p class="page-kicker">Discover what is popular right now by love count, comment count, or recency.</p>
+    </div>
+    <a class="button is-light" href="{% url 'blog:following-posts' %}" hx-boost="true" title="Following Feed" aria-label="Following Feed">
+      <span class="icon"><i class="fa-solid fa-user-check"></i></span>
+    </a>
+  </div>
+</header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search trending posts by title, body, author, or channel"
+        aria-label="Search trending posts"
+      >
+    </div>
+    <div class="control">
+      <div class="select">
+        <select name="sort" aria-label="Sort trending posts">
+          <option value="love" {% if sort_by == 'love' %}selected{% endif %}>Most loved</option>
+          <option value="comments" {% if sort_by == 'comments' %}selected{% endif %}>Most commented</option>
+          <option value="date" {% if sort_by == 'date' %}selected{% endif %}>Newest</option>
+        </select>
+      </div>
+    </div>
+    <div class="control">
+      <div class="select">
+        <select name="window" aria-label="Time window">
+          <option value="24h" {% if window == '24h' %}selected{% endif %}>Last 24 hours</option>
+          <option value="7d" {% if window == '7d' %}selected{% endif %}>Last 7 days</option>
+          <option value="30d" {% if window == '30d' %}selected{% endif %}>Last 30 days</option>
+          <option value="all" {% if window == 'all' %}selected{% endif %}>All time</option>
+        </select>
+      </div>
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <span>Apply</span>
+      </button>
+    </div>
+    {% if search_query or sort_by != 'love' or window != '7d' %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% include 'blog/post_list_content.html' with show_popularity_metrics=True %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}#{{ tag.name }} | SheetMojo{% endblock %}
+{% block meta_description %}Posts tagged with #{{ tag.name }} on SheetMojo.{% endblock %}
+{% block og_title %}#{{ tag.name }} | SheetMojo{% endblock %}
+{% block og_description %}Posts tagged with #{{ tag.name }} on SheetMojo.{% endblock %}
+{% block twitter_title %}#{{ tag.name }} | SheetMojo{% endblock %}
+{% block twitter_description %}Posts tagged with #{{ tag.name }} on SheetMojo.{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-tag"></i></span>
+    <span>#{{ tag.name }}</span>
+  </h1>
+  <p class="page-kicker">All posts tagged with #{{ tag.name }}.</p>
+</header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search posts tagged #{{ tag.name }}…"
+        aria-label="Search posts"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-link" type="submit" title="Search" aria-label="Search">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+    {% if search_query %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% include "blog/post_list_content.html" %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Saved Posts | SheetMojo{% endblock %}
+{% block meta_description %}Your saved reading list with search and quick access to bookmarked posts.{% endblock %}
+{% block og_title %}Saved Posts | SheetMojo{% endblock %}
+{% block og_description %}Your saved reading list with search and quick access to bookmarked posts.{% endblock %}
+{% block twitter_title %}Saved Posts | SheetMojo{% endblock %}
+{% block twitter_description %}Your saved reading list with search and quick access to bookmarked posts.{% endblock %}
+{% block meta_robots %}noindex,nofollow{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap">
+    <div>
+      <h1 class="title is-3 mb-2">
+        <span class="icon mr-2"><i class="fa-solid fa-bookmark"></i></span>
+        <span>Saved Posts</span>
+      </h1>
+      <p class="page-kicker">Your personal reading list of posts you want to revisit.</p>
+    </div>
+    <p>
+      <a class="button is-light" href="{% url 'blog:following-posts' %}" hx-boost="true">
+        <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+        <span>Back to feed</span>
+      </a>
+    </p>
+  </div>
+</header>
+
+<form method="get" action="{{ request.path }}" class="box mb-5">
+  <div class="field has-addons has-addons-right is-flex-wrap-wrap">
+    <div class="control is-expanded">
+      <input
+        class="input"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Search saved posts by title, body, author, or channel"
+        aria-label="Search saved posts"
+      >
+    </div>
+    <div class="control">
+      <button class="button is-info" type="submit" title="Search" aria-label="Search">
+        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      </button>
+    </div>
+    {% if search_query %}
+      <div class="control">
+        <a class="button is-light" href="{{ request.path }}" hx-boost="true">Clear</a>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% include 'blog/post_list_content.html' %}
+{% endblock %}

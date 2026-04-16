@@ -144,6 +144,54 @@
     .navbar-link {
       font-weight: 600;
     }
+    .navbar-item.navbar-icon-link {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.35rem;
+      padding: 0.5rem 0.6rem;
+      border-radius: 10px;
+    }
+    .navbar-item.navbar-icon-link .tag {
+      position: absolute;
+      top: 0.1rem;
+      right: 0.05rem;
+      transform: translate(35%, -35%);
+      min-width: 1.1rem;
+      height: 1.1rem;
+      padding: 0 0.3rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      line-height: 1.1rem;
+      margin-left: 0;
+      pointer-events: none;
+    }
+    .navbar-menu {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      row-gap: 0.25rem;
+    }
+    .navbar-start,
+    .navbar-end {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      min-width: 0;
+      gap: 0.3rem 0.4rem;
+    }
+    .navbar-start {
+      flex: 1 1 640px;
+    }
+    .navbar-end {
+      flex: 1 1 340px;
+      justify-content: flex-end;
+    }
+    .navbar-item,
+    .navbar-link {
+      white-space: nowrap;
+    }
     .navbar-item.has-text-weight-semibold {
       font-family: "Merriweather", serif;
       font-size: 1.1rem;
@@ -268,6 +316,9 @@
     @media (max-width: 900px) {
       .post-detail-media {
         margin: 0 0 0.95rem 0;
+      }
+      .navbar-end {
+        justify-content: flex-start;
       }
     }
     .meta-pill {
@@ -575,6 +626,14 @@
       100% { transform: rotate(360deg); }
     }
     @media (max-width: 768px) {
+      .navbar-menu,
+      .navbar-start,
+      .navbar-end {
+        width: 100%;
+      }
+      .navbar-item {
+        width: auto;
+      }
       .section {
         padding-top: 1.25rem;
       }
@@ -596,26 +655,43 @@
 
     <div class="navbar-menu is-active">
       <div class="navbar-start">
-        <a class="navbar-item {% if request.resolver_match.url_name == 'channel-list' or request.resolver_match.url_name == 'my-channels' %}is-active{% endif %}" href="{% url 'blog:channel-list' %}" hx-boost="true" {% if request.resolver_match.url_name == 'channel-list' or request.resolver_match.url_name == 'my-channels' %}aria-current="page"{% endif %}>
-          <span class="icon mr-2"><i class="fa-solid fa-layer-group"></i></span>
-          <span>Channels</span>
+        <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'channel-list' or request.resolver_match.url_name == 'my-channels' or request.resolver_match.url_name == 'followed-channels' %}is-active{% endif %}" href="{% url 'blog:channel-list' %}" hx-boost="true" title="Channels" aria-label="Channels" {% if request.resolver_match.url_name == 'channel-list' or request.resolver_match.url_name == 'my-channels' or request.resolver_match.url_name == 'followed-channels' %}aria-current="page"{% endif %}>
+          <span class="icon"><i class="fa-solid fa-layer-group"></i></span>
         </a>
         {% if user.is_authenticated %}
-          <a class="navbar-item {% if request.resolver_match.url_name == 'my-channels' %}is-active{% endif %}" href="{% url 'blog:my-channels' %}" hx-boost="true" {% if request.resolver_match.url_name == 'my-channels' %}aria-current="page"{% endif %}>
-            <span class="icon mr-2"><i class="fa-solid fa-bookmark"></i></span>
-            <span>My Channels</span>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'my-channels' %}is-active{% endif %}" href="{% url 'blog:my-channels' %}" hx-boost="true" title="My Channels" aria-label="My Channels" {% if request.resolver_match.url_name == 'my-channels' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-user-gear"></i></span>
           </a>
-          <a class="navbar-item {% if request.resolver_match.url_name == 'following-posts' %}is-active{% endif %}" href="{% url 'blog:following-posts' %}" hx-boost="true" {% if request.resolver_match.url_name == 'following-posts' %}aria-current="page"{% endif %}>
-            <span class="icon mr-2"><i class="fa-solid fa-user-check"></i></span>
-            <span>Following Feed</span>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'followed-channels' %}is-active{% endif %}" href="{% url 'blog:followed-channels' %}" hx-boost="true" title="Followed Channels" aria-label="Followed Channels" {% if request.resolver_match.url_name == 'followed-channels' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-heart-circle-check"></i></span>
+            <span class="tag is-info is-light" aria-label="{{ followed_channel_count }} followed channels">{{ followed_channel_count }}</span>
           </a>
-          <a class="navbar-item {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'blog:profile' %}" hx-boost="true" {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>
-            <span class="icon mr-2"><i class="fa-solid fa-id-card"></i></span>
-            <span>Profile</span>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'following-posts' %}is-active{% endif %}" href="{% url 'blog:following-posts' %}" hx-boost="true" title="Following Feed" aria-label="Following Feed" {% if request.resolver_match.url_name == 'following-posts' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-user-check"></i></span>
+          </a>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'user-following-posts' %}is-active{% endif %}" href="{% url 'blog:user-following-posts' %}" hx-boost="true" title="Authors Feed" aria-label="Authors Feed" {% if request.resolver_match.url_name == 'user-following-posts' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-user-group"></i></span>
+          </a>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'trending-posts' %}is-active{% endif %}" href="{% url 'blog:trending-posts' %}" hx-boost="true" title="Trending" aria-label="Trending" {% if request.resolver_match.url_name == 'trending-posts' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-fire"></i></span>
+          </a>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'saved-posts' %}is-active{% endif %}" href="{% url 'blog:saved-posts' %}" hx-boost="true" title="Saved Posts" aria-label="Saved Posts" {% if request.resolver_match.url_name == 'saved-posts' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-bookmark"></i></span>
+            <span class="tag is-warning is-light" aria-label="{{ saved_post_count }} saved posts">{{ saved_post_count }}</span>
+          </a>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'notifications' %}is-active{% endif %}" href="{% url 'blog:notifications' %}" hx-boost="true" title="Notifications" aria-label="Notifications" {% if request.resolver_match.url_name == 'notifications' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-bell"></i></span>
+            <span class="tag is-danger is-light" aria-label="{{ unread_notification_count }} unread notifications">{{ unread_notification_count }}</span>
+          </a>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'blog:profile' %}" hx-boost="true" title="Profile" aria-label="Profile" {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-id-card"></i></span>
           </a>
         {% endif %}
       </div>
       <div class="navbar-end">
+        <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'search' %}is-active{% endif %}" href="{% url 'blog:search' %}" hx-boost="true" title="Search" aria-label="Search" {% if request.resolver_match.url_name == 'search' %}aria-current="page"{% endif %}>
+          <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        </a>
         <div class="navbar-item">
           <button class="theme-toggle" onclick="smToggleTheme()" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
             <span class="icon"><i id="theme-toggle-icon" class="fa-solid fa-moon"></i></span>
@@ -623,22 +699,16 @@
         </div>
         {% if user.is_authenticated %}
           <div class="navbar-item">
-            <span class="icon mr-2"><i class="fa-solid fa-user"></i></span>
-            <span><a href="{% url 'blog:profile' %}" hx-boost="true">Logged in as {{ user.username }}</a></span>
-          </div>
-          <div class="navbar-item">
             <form method="post" action="{% url 'logout' %}">
               {% csrf_token %}
-              <button class="button is-light" type="submit">
+              <button class="button is-light" type="submit" title="Logout" aria-label="Logout">
                 <span class="icon"><i class="fa-solid fa-right-from-bracket"></i></span>
-                <span>Logout</span>
               </button>
             </form>
           </div>
         {% else %}
-          <a class="navbar-item" href="{% url 'login' %}" hx-boost="true">
-            <span class="icon mr-2"><i class="fa-solid fa-right-to-bracket"></i></span>
-            <span>Login</span>
+          <a class="navbar-item" href="{% url 'login' %}" hx-boost="true" title="Login" aria-label="Login">
+            <span class="icon"><i class="fa-solid fa-right-to-bracket"></i></span>
           </a>
         {% endif %}
       </div>

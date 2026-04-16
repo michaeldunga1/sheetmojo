@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -14,6 +15,16 @@ class Profile(models.Model):
 	postal_code = models.CharField(max_length=20, blank=True)
 	post_office_box = models.CharField(max_length=50, blank=True)
 	about_me = models.TextField(blank=True)
+	email_digest_enabled = models.BooleanField(default=True)
+	digest_weekday = models.PositiveSmallIntegerField(
+		default=0,
+		validators=[MinValueValidator(0), MaxValueValidator(6)],
+	)
+	digest_hour = models.PositiveSmallIntegerField(
+		default=9,
+		validators=[MinValueValidator(0), MaxValueValidator(23)],
+	)
+	last_digest_sent_at = models.DateTimeField(null=True, blank=True)
 
 	def __str__(self):
 		if self.user_id:
@@ -88,6 +99,37 @@ class ChannelFollow(models.Model):
 		return super().save(*args, **kwargs)
 
 
+class UserFollow(models.Model):
+	follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_following")
+	following = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_followers")
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["follower", "following"], name="unique_user_follow_pair"),
+		]
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"{self.follower} follows user {self.following}"
+
+
+class Tag(models.Model):
+	name = models.CharField(max_length=50, unique=True)
+	slug = models.SlugField(max_length=50, unique=True)
+
+	class Meta:
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name
+
+	def save(self, *args, **kwargs):
+		if not self.slug:
+			self.slug = slugify(self.name)
+		return super().save(*args, **kwargs)
+
+
 class Post(models.Model):
 	channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name="posts")
 	author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
@@ -95,6 +137,7 @@ class Post(models.Model):
 	slug = models.SlugField(max_length=200)
 	body = models.TextField()
 	image = models.ImageField(upload_to="post_images/", blank=True, null=True)
+	tags = models.ManyToManyField("Tag", related_name="posts", blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
@@ -114,6 +157,12 @@ class Post(models.Model):
 			return self.image.storage.exists(self.image.name)
 		except Exception:
 			return False
+
+	@property
+	def reading_time_minutes(self):
+		# Estimate reading time at 200 words per minute, minimum 1 minute.
+		word_count = len(self.body.split())
+		return max(1, (word_count + 199) // 200)
 
 	def get_absolute_url(self):
 		return reverse(
@@ -155,6 +204,96 @@ class Comment(models.Model):
 
 	def __str__(self):
 		return f"Comment by {self.author} on {self.post}"
+
+	def save(self, *args, **kwargs):
+		self.full_clean()
+		return super().save(*args, **kwargs)
+
+
+class SavedPost(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="saved_posts")
+	post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="saved_by")
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["user", "post"], name="unique_saved_post_per_user"),
+		]
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"{self.user} saved {self.post}"
+
+	def save(self, *args, **kwargs):
+		self.full_clean()
+		return super().save(*args, **kwargs)
+
+
+class Notification(models.Model):
+	TYPE_FOLLOW = "follow"
+	TYPE_NEW_POST = "new_post"
+	TYPE_COMMENT = "comment"
+	TYPE_CHOICES = (
+		(TYPE_FOLLOW, "New follower"),
+		(TYPE_NEW_POST, "New post"),
+		(TYPE_COMMENT, "New comment"),
+	)
+
+	recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+	actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications_sent")
+	notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+	message = models.CharField(max_length=255)
+	target_url = models.CharField(max_length=255, blank=True)
+	is_read = models.BooleanField(default=False)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"Notification to {self.recipient} from {self.actor}: {self.message}"
+
+
+class PostReaction(models.Model):
+	LOVE = "love"
+	REACTION_CHOICES = ((LOVE, "Love"),)
+
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="post_reactions")
+	post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="reactions")
+	reaction = models.CharField(max_length=20, choices=REACTION_CHOICES, default=LOVE)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["user", "post", "reaction"], name="unique_reaction_per_user_per_post"),
+		]
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"{self.user} reacted {self.reaction} to {self.post}"
+
+	def save(self, *args, **kwargs):
+		self.full_clean()
+		return super().save(*args, **kwargs)
+
+
+class CommentReaction(models.Model):
+	LOVE = "love"
+	REACTION_CHOICES = ((LOVE, "Love"),)
+
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comment_reactions")
+	comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name="reactions")
+	reaction = models.CharField(max_length=20, choices=REACTION_CHOICES, default=LOVE)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["user", "comment", "reaction"], name="unique_reaction_per_user_per_comment"),
+		]
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"{self.user} reacted {self.reaction} to {self.comment}"
 
 	def save(self, *args, **kwargs):
 		self.full_clean()
