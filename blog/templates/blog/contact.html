@@ -1,0 +1,96 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Contact Us · SheetMojo{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="section">
+    <div class="columns is-centered">
+      <div class="column is-6-desktop is-8-tablet">
+        <header class="mb-5">
+          <h1 class="title is-3">Contact Us</h1>
+          <p class="subtitle is-6">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+        </header>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification is-{{ message.tags }}">
+              <button class="delete" title="Close notification" aria-label="Close notification"></button>
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" class="card">
+          {% csrf_token %}
+          {{ form.website }}
+          <div class="card-content">
+            {% if form.non_field_errors %}
+              <div class="notification is-danger">
+                {% for error in form.non_field_errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="field">
+              <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+              <div class="control">
+                {{ form.name }}
+                {% if form.name.errors %}
+                  <div class="help is-danger">{{ form.name.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+              <div class="control">
+                {{ form.email }}
+                {% if form.email.errors %}
+                  <div class="help is-danger">{{ form.email.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+              <div class="control">
+                {{ form.message }}
+                {% if form.message.errors %}
+                  <div class="help is-danger">{{ form.message.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="field is-grouped mt-4">
+              <div class="control">
+                <button class="button is-primary" type="submit">Send Message</button>
+              </div>
+              <div class="control">
+                <a href="/" class="button is-light">Cancel</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #id_name, #id_email, #id_message {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #dbdbdb;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+
+  #id_name:focus, #id_email:focus, #id_message:focus {
+    border-color: #3273dc;
+    box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
+    outline: none;
+  }
+</style>
+{% endblock %}

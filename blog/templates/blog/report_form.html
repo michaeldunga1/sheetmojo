@@ -1,0 +1,102 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Report Content | SheetMojo{% endblock %}
+
+{% block content %}
+<div class="container is-max-desktop">
+  <div class="card">
+    <div class="card-header">
+      <p class="card-header-title">
+        <span class="icon mr-2"><i class="fa-solid fa-flag"></i></span>
+        <span>{% if existing_report %}Edit Report{% else %}Report {{ content_type|title }}{% endif %}</span>
+      </p>
+    </div>
+    <div class="card-content">
+      {% if post %}
+        <div class="box mb-4">
+          <h3 class="title is-5 mb-2">{{ post.title }}</h3>
+          <p class="subtitle is-6"><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a> in <a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a></p>
+        </div>
+      {% endif %}
+      
+      {% if comment %}
+        <div class="box mb-4">
+          <p class="mb-2">{{ comment.body }}</p>
+          <p class="subtitle is-6">by <a href="{% url 'blog:user-profile' comment.author.username %}" hx-boost="true">{{ comment.author }}</a> on <a href="{{ comment.post.get_absolute_url }}" hx-boost="true">{{ comment.post.title }}</a></p>
+        </div>
+      {% endif %}
+      
+      {% if channel %}
+        <div class="box mb-4">
+          <h3 class="title is-5 mb-2">{{ channel.name }}</h3>
+          <p class="subtitle is-6">by <a href="{% url 'blog:user-profile' channel.owner.username %}" hx-boost="true">{{ channel.owner }}</a></p>
+        </div>
+      {% endif %}
+      
+      {% if reported_user %}
+        <div class="box mb-4">
+          <h3 class="title is-5 mb-2">{{ reported_user.username }}</h3>
+          {% if reported_user.profile.about_me %}
+            <p>{{ reported_user.profile.about_me }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="field">
+          <fieldset>
+            <legend class="label">Reason for Report</legend>
+            <div class="control">
+              {% for choice in form.reason %}
+                <label class="radio" for="{{ choice.id_for_label }}">
+                  {{ choice.tag }}
+                  {{ choice.choice_label }}
+                </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% if form.reason.errors %}
+            <p class="help is-danger">{{ form.reason.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+          <div class="control">
+            {{ form.description }}
+          </div>
+          {% if form.description.errors %}
+            <p class="help is-danger">{{ form.description.errors }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field is-grouped">
+          <div class="control">
+            <button class="button is-primary" type="submit">{% if existing_report %}Update Report{% else %}Submit Report{% endif %}</button>
+          </div>
+          <div class="control">
+            <a class="button is-light" href="javascript:history.back()">Cancel</a>
+          </div>
+          {% if existing_report %}
+          <div class="control">
+            <form method="post" action="{% url 'blog:report-delete' existing_report.pk %}" style="display:inline">
+              {% csrf_token %}
+              <button class="button is-danger is-light" type="submit" title="Withdraw this report" onclick="return confirm('Withdraw your report?')">
+                <span class="icon"><i class="fa-solid fa-trash"></i></span>
+                <span>Withdraw Report</span>
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </form>
+
+      <div class="box is-light mt-4">
+        <p class="has-text-grey"><strong>Note:</strong> Please provide accurate details about why you're reporting this content. False reports may result in loss of reporting privileges.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

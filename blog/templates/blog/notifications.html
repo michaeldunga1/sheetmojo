@@ -123,6 +123,14 @@
                     New follower
                   {% elif notification.notification_type == 'new_post' %}
                     New post
+                  {% elif notification.notification_type == 'coauthor_invite' %}
+                    Co-author invite
+                  {% elif notification.notification_type == 'coauthor_accepted' %}
+                    Co-author accepted
+                  {% elif notification.notification_type == 'editor_invite' %}
+                    Editor invite
+                  {% elif notification.notification_type == 'editor_accepted' %}
+                    Editor accepted
                   {% else %}
                     New comment
                   {% endif %}

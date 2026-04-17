@@ -6,6 +6,14 @@ from django.db.models import Q
 class EmailOrUsernameBackend(ModelBackend):
     """Authenticate with either username or email in the username field."""
 
+    def user_can_authenticate(self, user):
+        if not super().user_can_authenticate(user):
+            return False
+        profile = getattr(user, "profile", None)
+        if not profile:
+            return True
+        return not profile.is_currently_suspended
+
     def authenticate(self, request, username=None, password=None, **kwargs):
         if username is None:
             username = kwargs.get(get_user_model().USERNAME_FIELD)

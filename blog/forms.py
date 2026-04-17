@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
-from .models import Channel, Comment, Post, Profile, Tag
+from .models import Channel, Comment, Contact, NewsletterSubscription, Post, Profile, Tag, Report
 
 User = get_user_model()
 
@@ -67,7 +67,7 @@ class EmailAuthenticationForm(AuthenticationForm):
 class ChannelForm(forms.ModelForm):
     class Meta:
         model = Channel
-        fields = ["name", "intro", "description"]
+        fields = ["name", "intro", "description", "comments_enabled"]
 
 
 class PostForm(forms.ModelForm):
@@ -154,4 +154,40 @@ class ProfileEditForm(forms.ModelForm):
         widgets = {
             "digest_weekday": forms.Select(choices=WEEKDAY_CHOICES),
             "digest_hour": forms.Select(choices=DIGEST_HOUR_CHOICES),
+
+        }
+
+
+class ContactForm(forms.ModelForm):
+    website = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    class Meta:
+        model = Contact
+        fields = ["name", "email", "message"]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Your name"}),
+            "email": forms.EmailInput(attrs={"placeholder": "your@email.com"}),
+            "message": forms.Textarea(attrs={"rows": 6, "placeholder": "Your message..."}),
+        }
+
+
+class NewsletterSubscribeForm(forms.Form):
+    website = forms.CharField(required=False, widget=forms.HiddenInput())
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={"placeholder": "you@example.com"}),
+    )
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        if NewsletterSubscription.objects.filter(email__iexact=email, is_active=True).exists():
+            raise forms.ValidationError("This email is already subscribed.")
+        return email
+
+class ReportForm(forms.ModelForm):
+    class Meta:
+        model = Report
+        fields = ["reason", "description"]
+        widgets = {
+            "reason": forms.RadioSelect(choices=Report.REASON_CHOICES),
+            "description": forms.Textarea(attrs={"rows": 4, "placeholder": "Please provide details about why you're reporting this content"}),
         }

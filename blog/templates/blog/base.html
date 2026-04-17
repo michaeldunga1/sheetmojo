@@ -736,6 +736,9 @@
           <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'blog:profile' %}" hx-boost="true" title="Profile" aria-label="Profile" {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>
             <span class="icon"><i class="fa-solid fa-id-card"></i></span>
           </a>
+          <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'blog:dashboard' %}" hx-boost="true" title="Dashboard" aria-label="Dashboard" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>
+            <span class="icon"><i class="fa-solid fa-table-columns"></i></span>
+          </a>
         {% endif %}
       </div>
       <div class="navbar-end">
@@ -743,6 +746,16 @@
           <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
         </a>
         <div class="navbar-item">
+            <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" href="{% url 'blog:contact' %}" hx-boost="true" title="Contact Us" aria-label="Contact Us" {% if request.resolver_match.url_name == 'contact' %}aria-current="page"{% endif %}>
+              <span class="icon"><i class="fa-solid fa-envelope"></i></span>
+            </a>
+            <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'support-us' %}is-active{% endif %}" href="{% url 'blog:support-us' %}" hx-boost="true" title="Support Us" aria-label="Support Us" {% if request.resolver_match.url_name == 'support-us' %}aria-current="page"{% endif %}>
+              <span class="icon"><i class="fa-solid fa-hand-holding-heart"></i></span>
+            </a>
+            <a class="navbar-item navbar-icon-link {% if request.resolver_match.url_name == 'newsletter-subscribe' %}is-active{% endif %}" href="{% url 'blog:newsletter-subscribe' %}" hx-boost="true" title="Newsletter" aria-label="Newsletter" {% if request.resolver_match.url_name == 'newsletter-subscribe' %}aria-current="page"{% endif %}>
+              <span class="icon"><i class="fa-solid fa-newspaper"></i></span>
+            </a>
+            <div class="navbar-item">
           <button class="theme-toggle" onclick="smToggleTheme()" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">
             <span class="icon"><i id="theme-toggle-icon" class="fa-solid fa-moon"></i></span>
           </button>
@@ -778,6 +791,14 @@
       {% block content %}{% endblock %}
     </div>
   </main>
+  <footer class="section pt-0">
+    <div class="container has-text-centered">
+      <p class="is-size-7 has-text-grey">
+        Enjoying SheetMojo?
+        <a href="{% url 'blog:support-us' %}" hx-boost="true">Support Us</a>
+      </p>
+    </div>
+  </footer>
   <script>
     function smToggleTheme() {
       var html = document.documentElement;

@@ -1,0 +1,67 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Newsletter Subscription · SheetMojo{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="section">
+    <div class="columns is-centered">
+      <div class="column is-5-desktop is-7-tablet">
+        <header class="mb-5">
+          <h1 class="title is-3">Subscribe to our newsletter</h1>
+          <p class="subtitle is-6">Get curated updates, highlights, and product news in your inbox.</p>
+        </header>
+
+        <form method="post" class="card">
+          {% csrf_token %}
+          {{ form.website }}
+          <div class="card-content">
+            {% if form.non_field_errors %}
+              <div class="notification is-danger">
+                {% for error in form.non_field_errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="field">
+              <label class="label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+              <div class="control">
+                {{ form.email }}
+              </div>
+              {% if form.email.errors %}
+                <p class="help is-danger">{{ form.email.errors.0 }}</p>
+              {% endif %}
+            </div>
+
+            <div class="field is-grouped mt-4">
+              <div class="control">
+                <button class="button is-primary" type="submit">Subscribe</button>
+              </div>
+              <div class="control">
+                <a href="/" class="button is-light">Cancel</a>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #id_email {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #dbdbdb;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+
+  #id_email:focus {
+    border-color: #3273dc;
+    box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
+    outline: none;
+  }
+</style>
+{% endblock %}

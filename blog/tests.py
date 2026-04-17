@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.cache import cache
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -8,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import Channel, ChannelFollow, Comment, Notification, Post, Profile, SavedPost, Tag
+from .models import Channel, ChannelFollow, Comment, Contact, NewsletterSubscription, Notification, Post, Profile, SavedPost, Tag
 
 User = get_user_model()
 
@@ -977,3 +978,149 @@ class WeeklyDigestCommandTests(TestCase):
 		call_command("send_weekly_digest", user=self.reader.username, force=True)
 
 		self.assertEqual(len(mail.outbox), 0)
+
+
+class ContactAntiSpamTests(TestCase):
+	def setUp(self):
+		self.url = reverse("blog:contact")
+
+	def _payload(self, message="Hello there", email="visitor@example.com"):
+		return {
+			"name": "Visitor",
+			"email": email,
+			"message": message,
+			"website": "",
+		}
+
+	def test_contact_submission_saves_message(self):
+		response = self.client.post(self.url, self._payload(), REMOTE_ADDR="10.0.0.1")
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(Contact.objects.count(), 1)
+
+	def test_honeypot_submission_is_ignored(self):
+		payload = self._payload()
+		payload["website"] = "https://spam.example"
+
+		response = self.client.post(self.url, payload, REMOTE_ADDR="10.0.0.2")
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(Contact.objects.count(), 0)
+
+	def test_duplicate_message_is_rejected_within_window(self):
+		first = self.client.post(self.url, self._payload("same message", email="dup@example.com"), REMOTE_ADDR="10.0.0.3")
+		second = self.client.post(self.url, self._payload("same message", email="dup@example.com"), REMOTE_ADDR="10.0.0.4")
+
+		self.assertEqual(first.status_code, 302)
+		self.assertEqual(second.status_code, 200)
+		self.assertContains(second, "already received this message recently")
+		self.assertEqual(Contact.objects.count(), 1)
+
+	def test_rate_limit_blocks_after_three_submissions_from_same_ip(self):
+		for idx in range(3):
+			response = self.client.post(self.url, self._payload(f"msg-{idx}", email=f"rate{idx}@example.com"), REMOTE_ADDR="10.0.0.5")
+			self.assertEqual(response.status_code, 302)
+
+		blocked = self.client.post(self.url, self._payload("msg-4", email="rate4@example.com"), REMOTE_ADDR="10.0.0.5")
+
+		self.assertEqual(blocked.status_code, 200)
+		self.assertContains(blocked, "Too many messages from this network")
+		self.assertEqual(Contact.objects.count(), 3)
+
+	def test_email_cooldown_blocks_immediate_second_submission(self):
+		first = self.client.post(self.url, self._payload("first", email="cooldown@example.com"), REMOTE_ADDR="10.0.0.6")
+		second = self.client.post(self.url, self._payload("second", email="cooldown@example.com"), REMOTE_ADDR="10.0.0.7")
+
+		self.assertEqual(first.status_code, 302)
+		self.assertEqual(second.status_code, 200)
+		self.assertContains(second, "Please wait a minute before sending another message")
+		self.assertEqual(Contact.objects.count(), 1)
+
+	@override_settings(CONTACT_EMAIL_COOLDOWN_SECONDS=1)
+	def test_email_cooldown_setting_allows_retry_after_expiry(self):
+		first = self.client.post(self.url, self._payload("one", email="config@example.com"), REMOTE_ADDR="10.0.0.8")
+		self.assertEqual(first.status_code, 302)
+
+		second = self.client.post(self.url, self._payload("two", email="config@example.com"), REMOTE_ADDR="10.0.0.9")
+		self.assertEqual(second.status_code, 200)
+
+		cache.delete("contact-cooldown:config@example.com")
+		third = self.client.post(self.url, self._payload("three", email="config@example.com"), REMOTE_ADDR="10.0.0.10")
+
+		self.assertEqual(third.status_code, 302)
+		self.assertEqual(Contact.objects.count(), 2)
+
+
+class NewsletterSubscriptionTests(TestCase):
+	def setUp(self):
+		self.url = reverse("blog:newsletter-subscribe")
+
+	def _payload(self, email="news@example.com"):
+		return {
+			"email": email,
+			"website": "",
+		}
+
+	def test_newsletter_subscription_creates_record(self):
+		response = self.client.post(self.url, self._payload(), REMOTE_ADDR="10.0.1.1")
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(NewsletterSubscription.objects.count(), 1)
+		subscription = NewsletterSubscription.objects.first()
+		self.assertEqual(subscription.email, "news@example.com")
+		self.assertTrue(subscription.is_active)
+
+	def test_duplicate_active_subscription_shows_validation_error(self):
+		NewsletterSubscription.objects.create(email="dupnews@example.com", is_active=True)
+
+		response = self.client.post(self.url, self._payload("dupnews@example.com"), REMOTE_ADDR="10.0.1.2")
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "already subscribed")
+		self.assertEqual(NewsletterSubscription.objects.count(), 1)
+
+	def test_inactive_subscription_is_reactivated(self):
+		NewsletterSubscription.objects.create(email="inactive@example.com", is_active=False)
+
+		response = self.client.post(self.url, self._payload("inactive@example.com"), REMOTE_ADDR="10.0.1.3")
+
+		self.assertEqual(response.status_code, 302)
+		subscription = NewsletterSubscription.objects.get(email="inactive@example.com")
+		self.assertTrue(subscription.is_active)
+
+	def test_honeypot_submission_is_ignored(self):
+		payload = self._payload("bot@example.com")
+		payload["website"] = "https://bot.example"
+
+		response = self.client.post(self.url, payload, REMOTE_ADDR="10.0.1.4")
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(NewsletterSubscription.objects.count(), 0)
+
+	def test_rate_limit_blocks_after_max_submissions_from_same_ip(self):
+		cache.clear()
+		with self.settings(NEWSLETTER_RATE_LIMIT_MAX_SUBMISSIONS=3, NEWSLETTER_RATE_LIMIT_WINDOW_SECONDS=600):
+			for i in range(3):
+				response = self.client.post(self.url, self._payload(f"user{i}@example.com"), REMOTE_ADDR="10.0.9.1")
+				self.assertEqual(response.status_code, 302)
+
+			response = self.client.post(self.url, self._payload("blocked@example.com"), REMOTE_ADDR="10.0.9.1")
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Too many subscription attempts")
+
+	def test_different_ips_are_not_rate_limited_together(self):
+		cache.clear()
+		with self.settings(NEWSLETTER_RATE_LIMIT_MAX_SUBMISSIONS=1, NEWSLETTER_RATE_LIMIT_WINDOW_SECONDS=600):
+			self.client.post(self.url, self._payload("a@example.com"), REMOTE_ADDR="10.0.8.1")
+			response = self.client.post(self.url, self._payload("b@example.com"), REMOTE_ADDR="10.0.8.2")
+
+		self.assertEqual(response.status_code, 302)
+
+
+class SupportUsPageTests(TestCase):
+	def test_support_us_page_loads(self):
+		response = self.client.get(reverse("blog:support-us"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Support SheetMojo")

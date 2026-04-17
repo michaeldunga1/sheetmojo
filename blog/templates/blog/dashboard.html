@@ -1,0 +1,423 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Dashboard · SheetMojo{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <h1 class="title is-4 mb-1">
+    <span class="icon mr-2"><i class="fa-solid fa-table-columns"></i></span>
+    Dashboard
+  </h1>
+  <p class="page-kicker mb-0">Filter and manage your posts, channels, comments, reactions, and reports.</p>
+</header>
+
+<div class="dashboard-kpis mb-4">
+  <div class="dashboard-kpi"><span>Posts created</span><strong>{{ counts.posts_created }}</strong></div>
+  <div class="dashboard-kpi"><span>Channels owned</span><strong>{{ counts.channels_owned }}</strong></div>
+  <div class="dashboard-kpi"><span>Subscribers</span><strong>{{ counts.subscriber_count }}</strong></div>
+  <div class="dashboard-kpi"><span>Blocking</span><strong>{{ counts.blocking_count }}</strong></div>
+  <div class="dashboard-kpi"><span>Blockers</span><strong>{{ counts.blocker_count }}</strong></div>
+</div>
+
+<div class="dashboard-shell">
+  <nav class="dashboard-sidebar" aria-label="Dashboard categories">
+    <ul class="dashboard-tab-list">
+      <li><a href="?tab=posts" class="dashboard-tab-item {% if tab == 'posts' %}is-active{% endif %}"><span class="dashboard-tab-icon"><i class="fa-solid fa-newspaper"></i></span><span class="dashboard-tab-label">Posts</span><span class="dashboard-count-badge">{{ counts.posts }}</span></a></li>
+      <li><a href="?tab=channels" class="dashboard-tab-item {% if tab == 'channels' %}is-active{% endif %}"><span class="dashboard-tab-icon"><i class="fa-solid fa-layer-group"></i></span><span class="dashboard-tab-label">Channels</span><span class="dashboard-count-badge">{{ counts.channels }}</span></a></li>
+      <li><a href="?tab=comments" class="dashboard-tab-item {% if tab == 'comments' %}is-active{% endif %}"><span class="dashboard-tab-icon"><i class="fa-solid fa-comments"></i></span><span class="dashboard-tab-label">Comments</span><span class="dashboard-count-badge">{{ counts.comments }}</span></a></li>
+      <li><a href="?tab=reactions" class="dashboard-tab-item {% if tab == 'reactions' %}is-active{% endif %}"><span class="dashboard-tab-icon"><i class="fa-solid fa-heart"></i></span><span class="dashboard-tab-label">Reactions</span><span class="dashboard-count-badge">{{ counts.reactions }}</span></a></li>
+      <li><a href="?tab=reports" class="dashboard-tab-item {% if tab == 'reports' %}is-active{% endif %}"><span class="dashboard-tab-icon"><i class="fa-solid fa-flag"></i></span><span class="dashboard-tab-label">Reports</span><span class="dashboard-count-badge">{{ counts.reports }}</span></a></li>
+    </ul>
+  </nav>
+
+  <section class="dashboard-main">
+    <form method="get" class="dashboard-filters card mb-3">
+      <div class="card-content">
+        <input type="hidden" name="tab" value="{{ tab }}">
+
+        <div class="columns is-multiline is-variable is-2">
+          <div class="column is-12-tablet is-4-desktop">
+            <label class="label is-small" for="dashboard-filter-q">Search</label>
+            <input id="dashboard-filter-q" class="input is-small" type="search" name="q" value="{{ search_query }}" placeholder="Search {{ tab }}..." title="Search">
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-date-scope">Date scope</label>
+            <div class="select is-small is-fullwidth">
+              <select id="dashboard-filter-date-scope" name="date_scope" title="Date scope">
+                <option value="all" {% if date_scope == 'all' %}selected{% endif %}>All</option>
+                <option value="day" {% if date_scope == 'day' %}selected{% endif %}>Day</option>
+                <option value="month" {% if date_scope == 'month' %}selected{% endif %}>Month</option>
+                <option value="year" {% if date_scope == 'year' %}selected{% endif %}>Year</option>
+                <option value="duration" {% if date_scope == 'duration' %}selected{% endif %}>Duration</option>
+                <option value="range" {% if date_scope == 'range' %}selected{% endif %}>Range</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-day">Day</label>
+            <input id="dashboard-filter-day" class="input is-small" type="date" name="day" value="{{ day }}" title="Day">
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-month">Month</label>
+            <div class="select is-small is-fullwidth">
+              <select id="dashboard-filter-month" name="month" title="Month">
+                <option value="">All months</option>
+                <option value="01" {% if month == '01' %}selected{% endif %}>January</option>
+                <option value="02" {% if month == '02' %}selected{% endif %}>February</option>
+                <option value="03" {% if month == '03' %}selected{% endif %}>March</option>
+                <option value="04" {% if month == '04' %}selected{% endif %}>April</option>
+                <option value="05" {% if month == '05' %}selected{% endif %}>May</option>
+                <option value="06" {% if month == '06' %}selected{% endif %}>June</option>
+                <option value="07" {% if month == '07' %}selected{% endif %}>July</option>
+                <option value="08" {% if month == '08' %}selected{% endif %}>August</option>
+                <option value="09" {% if month == '09' %}selected{% endif %}>September</option>
+                <option value="10" {% if month == '10' %}selected{% endif %}>October</option>
+                <option value="11" {% if month == '11' %}selected{% endif %}>November</option>
+                <option value="12" {% if month == '12' %}selected{% endif %}>December</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-year">Year</label>
+            <div class="select is-small is-fullwidth">
+              <select id="dashboard-filter-year" name="year" title="Year">
+                <option value="">All years</option>
+                <option value="2026" {% if year == '2026' %}selected{% endif %}>2026</option>
+                <option value="2025" {% if year == '2025' %}selected{% endif %}>2025</option>
+                <option value="2024" {% if year == '2024' %}selected{% endif %}>2024</option>
+                <option value="2023" {% if year == '2023' %}selected{% endif %}>2023</option>
+                <option value="2022" {% if year == '2022' %}selected{% endif %}>2022</option>
+                <option value="2021" {% if year == '2021' %}selected{% endif %}>2021</option>
+                <option value="2020" {% if year == '2020' %}selected{% endif %}>2020</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-duration-days">Duration (days)</label>
+            <input id="dashboard-filter-duration-days" class="input is-small" type="number" min="1" name="duration_days" value="{{ duration_days }}" placeholder="30" title="Duration in days">
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-start-date">Start date</label>
+            <input id="dashboard-filter-start-date" class="input is-small" type="date" name="start_date" value="{{ start_date }}" title="Start date">
+          </div>
+
+          <div class="column is-6-tablet is-2-desktop">
+            <label class="label is-small" for="dashboard-filter-end-date">End date</label>
+            <input id="dashboard-filter-end-date" class="input is-small" type="date" name="end_date" value="{{ end_date }}" title="End date">
+          </div>
+
+          {% if tab == 'posts' %}
+            <div class="column is-6-tablet is-2-desktop">
+              <label class="label is-small" for="dashboard-filter-state">Publish state</label>
+              <div class="select is-small is-fullwidth">
+                <select id="dashboard-filter-state" name="state" title="Publish state">
+                  <option value="all" {% if state == 'all' %}selected{% endif %}>All</option>
+                  <option value="published" {% if state == 'published' %}selected{% endif %}>Published</option>
+                  <option value="drafts" {% if state == 'drafts' %}selected{% endif %}>Drafts</option>
+                </select>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-3-desktop">
+              <label class="label is-small" for="dashboard-filter-channel-id">Channel</label>
+              <div class="select is-small is-fullwidth">
+                <select id="dashboard-filter-channel-id" name="channel_id" title="Channel">
+                  <option value="">All channels</option>
+                  {% for channel in owned_channels %}
+                    <option value="{{ channel.id }}" {% if channel_id == channel.id|stringformat:'s' %}selected{% endif %}>{{ channel.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-min-comment-count">Min comments</label><input id="dashboard-filter-min-comment-count" class="input is-small" type="number" min="0" name="min_comment_count" value="{{ min_comment_count }}" title="Minimum comments"></div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-max-comment-count">Max comments</label><input id="dashboard-filter-max-comment-count" class="input is-small" type="number" min="0" name="max_comment_count" value="{{ max_comment_count }}" title="Maximum comments"></div>
+          {% endif %}
+
+          {% if tab == 'channels' %}
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-min-follower-count">Min followers</label><input id="dashboard-filter-min-follower-count" class="input is-small" type="number" min="0" name="min_follower_count" value="{{ min_follower_count }}" title="Minimum followers"></div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-max-follower-count">Max followers</label><input id="dashboard-filter-max-follower-count" class="input is-small" type="number" min="0" name="max_follower_count" value="{{ max_follower_count }}" title="Maximum followers"></div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-min-posts-count">Min posts</label><input id="dashboard-filter-min-posts-count" class="input is-small" type="number" min="0" name="min_posts_count" value="{{ min_posts_count }}" title="Minimum posts"></div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-max-posts-count">Max posts</label><input id="dashboard-filter-max-posts-count" class="input is-small" type="number" min="0" name="max_posts_count" value="{{ max_posts_count }}" title="Maximum posts"></div>
+          {% endif %}
+
+          {% if tab == 'posts' or tab == 'comments' %}
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-min-like-count">Min likes</label><input id="dashboard-filter-min-like-count" class="input is-small" type="number" min="0" name="min_like_count" value="{{ min_like_count }}" title="Minimum likes"></div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-max-like-count">Max likes</label><input id="dashboard-filter-max-like-count" class="input is-small" type="number" min="0" name="max_like_count" value="{{ max_like_count }}" title="Maximum likes"></div>
+          {% endif %}
+
+          {% if tab == 'posts' or tab == 'channels' or tab == 'comments' %}
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-min-flag-count">Min flags</label><input id="dashboard-filter-min-flag-count" class="input is-small" type="number" min="0" name="min_flag_count" value="{{ min_flag_count }}" title="Minimum flags"></div>
+            <div class="column is-6-tablet is-2-desktop"><label class="label is-small" for="dashboard-filter-max-flag-count">Max flags</label><input id="dashboard-filter-max-flag-count" class="input is-small" type="number" min="0" name="max_flag_count" value="{{ max_flag_count }}" title="Maximum flags"></div>
+          {% endif %}
+
+          {% if tab == 'reports' %}
+            <div class="column is-6-tablet is-3-desktop">
+              <label class="label is-small" for="dashboard-filter-status">Status</label>
+              <div class="select is-small is-fullwidth">
+                <select id="dashboard-filter-status" name="status" title="Report status">
+                  <option value="">Any status</option>
+                  {% for choice_value, choice_label in report_status_choices %}
+                    <option value="{{ choice_value }}" {% if status == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-3-desktop">
+              <label class="label is-small" for="dashboard-filter-reason">Reason</label>
+              <div class="select is-small is-fullwidth">
+                <select id="dashboard-filter-reason" name="reason" title="Report reason">
+                  <option value="">Any reason</option>
+                  {% for choice_value, choice_label in report_reason_choices %}
+                    <option value="{{ choice_value }}" {% if reason == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-3-desktop">
+              <label class="label is-small" for="dashboard-filter-content-type">Content type</label>
+              <div class="select is-small is-fullwidth">
+                <select id="dashboard-filter-content-type" name="content_type" title="Report content type">
+                  <option value="">Any type</option>
+                  {% for choice_value, choice_label in report_content_choices %}
+                    <option value="{{ choice_value }}" {% if content_type == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="column is-12 dashboard-filter-actions">
+            <button class="button is-primary is-small" type="submit">
+              <span class="icon"><i class="fa-solid fa-filter"></i></span>
+              <span>Apply filters</span>
+            </button>
+            <a class="button is-light is-small" href="?tab={{ tab }}">Reset</a>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <form method="post" class="dashboard-batch-form">
+      {% csrf_token %}
+      <input type="hidden" name="tab" value="{{ tab }}">
+      {% for key, value in persisted_query_items %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% endfor %}
+
+      <div class="dashboard-batch-toolbar card mb-3">
+        <div class="card-content dashboard-batch-toolbar-content">
+          <div class="dashboard-batch-toolbar-left">
+            <label class="checkbox is-size-7">
+              <input type="checkbox" id="dashboard-select-all" title="Select all rows on this page">
+              Select all on page
+            </label>
+            <span class="is-size-7 has-text-grey" id="dashboard-selection-count">0 selected</span>
+          </div>
+          <div class="dashboard-batch-toolbar-right">
+            <div class="select is-small">
+              <select name="batch_action" required title="Batch action">
+                <option value="">Batch action...</option>
+                {% for action_value, action_label in available_actions %}
+                  <option value="{{ action_value }}">{{ action_label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button class="button is-small is-dark" type="submit">
+              <span class="icon"><i class="fa-solid fa-bolt"></i></span>
+              <span>Run</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {% if page_obj.object_list %}
+        {% if tab == 'posts' %}
+          <div class="dashboard-item-list" role="list">
+            {% for post in page_obj %}
+              <div class="dashboard-row {% if not post.is_published %}dashboard-row--muted{% endif %}" role="listitem">
+                <div><input class="dashboard-select-one" type="checkbox" name="selected_ids" value="{{ post.id }}" title="Select post"></div>
+                <div class="dashboard-row-body">
+                  <a class="dashboard-row-title" href="{{ post.get_absolute_url }}" hx-boost="true">{{ post.title }}</a>
+                  <div class="dashboard-row-meta">
+                    <span>{{ post.channel.name }}</span>
+                    <span>{{ post.created_at|date:"M j, Y" }}</span>
+                    <span>Comments: {{ post.comment_count }}</span>
+                    <span>Flags: {{ post.report_count }}</span>
+                    <span>Likes: {{ post.love_count }}</span>
+                    <span>{% if post.is_published %}Published{% else %}Draft{% endif %}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% elif tab == 'channels' %}
+          <div class="dashboard-item-list" role="list">
+            {% for channel in page_obj %}
+              <div class="dashboard-row" role="listitem">
+                <div><input class="dashboard-select-one" type="checkbox" name="selected_ids" value="{{ channel.id }}" title="Select channel"></div>
+                <div class="dashboard-row-body">
+                  <a class="dashboard-row-title" href="{% url 'blog:channel-detail' channel.slug %}" hx-boost="true">{{ channel.name }}</a>
+                  <div class="dashboard-row-meta">
+                    <span>{{ channel.created_at|date:"M j, Y" }}</span>
+                    <span>Followers: {{ channel.follower_count }}</span>
+                    <span>Posts: {{ channel.posts_count }}</span>
+                    <span>Flags: {{ channel.report_count }}</span>
+                    <span>{% if channel.is_currently_suspended %}Suspended{% else %}Active{% endif %}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% elif tab == 'comments' %}
+          <div class="dashboard-item-list" role="list">
+            {% for comment in page_obj %}
+              <div class="dashboard-row" role="listitem">
+                <div><input class="dashboard-select-one" type="checkbox" name="selected_ids" value="{{ comment.id }}" title="Select comment"></div>
+                <div class="dashboard-row-body">
+                  <a class="dashboard-row-title" href="{{ comment.post.get_absolute_url }}" hx-boost="true">{{ comment.post.title }}</a>
+                  <p class="dashboard-row-excerpt">{{ comment.body|truncatechars:140 }}</p>
+                  <div class="dashboard-row-meta">
+                    <span>{{ comment.created_at|date:"M j, Y" }}</span>
+                    <span>Likes: {{ comment.love_count }}</span>
+                    <span>Flags: {{ comment.report_count }}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% elif tab == 'reactions' %}
+          <div class="dashboard-item-list" role="list">
+            {% for reaction in page_obj %}
+              <div class="dashboard-row" role="listitem">
+                <div><input class="dashboard-select-one" type="checkbox" name="selected_ids" value="{{ reaction.id }}" title="Select reaction"></div>
+                <div class="dashboard-row-body">
+                  <a class="dashboard-row-title" href="{{ reaction.post.get_absolute_url }}" hx-boost="true">{{ reaction.post.title }}</a>
+                  <div class="dashboard-row-meta">
+                    <span>Author: {{ reaction.post.author.username }}</span>
+                    <span>Channel: {{ reaction.post.channel.name }}</span>
+                    <span>{{ reaction.created_at|date:"M j, Y" }}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% elif tab == 'reports' %}
+          <div class="dashboard-item-list" role="list">
+            {% for report in page_obj %}
+              <div class="dashboard-row" role="listitem">
+                <div><input class="dashboard-select-one" type="checkbox" name="selected_ids" value="{{ report.id }}" title="Select report"></div>
+                <div class="dashboard-row-body">
+                  <span class="dashboard-row-title">{{ report.get_content_type_display }} · {{ report.get_reason_display }}</span>
+                  <div class="dashboard-row-meta">
+                    <span>Status: {{ report.status|capfirst }}</span>
+                    <span>{{ report.created_at|date:"M j, Y" }}</span>
+                    {% if report.reported_user %}<span>Reported user: {{ report.reported_user.username }}</span>{% endif %}
+                  </div>
+                  <p class="dashboard-row-excerpt">{{ report.description|truncatechars:140 }}</p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="dashboard-empty-state">
+          <span class="dashboard-empty-icon"><i class="fa-solid fa-inbox"></i></span>
+          <p>No results for this tab and filter set.</p>
+        </div>
+      {% endif %}
+    </form>
+
+    {% if is_paginated %}
+      <nav class="dashboard-pagination" aria-label="Pagination">
+        {% if page_obj.has_previous %}
+          <a class="button is-light is-small" href="?{{ page_query_string }}&page={{ page_obj.previous_page_number }}">Older</a>
+        {% else %}
+          <span class="button is-light is-small" disabled>Older</span>
+        {% endif %}
+        <span class="has-text-grey is-size-7">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a class="button is-light is-small" href="?{{ page_query_string }}&page={{ page_obj.next_page_number }}">Newer</a>
+        {% else %}
+          <span class="button is-light is-small" disabled>Newer</span>
+        {% endif %}
+      </nav>
+    {% endif %}
+  </section>
+</div>
+
+<style>
+  .dashboard-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.55rem; }
+  .dashboard-kpi { border:1px solid var(--brand-line); border-radius:12px; background:var(--brand-paper); padding:.55rem .7rem; display:flex; flex-direction:column; gap:.1rem; }
+  .dashboard-kpi span { font-size:.72rem; color:var(--brand-muted); text-transform:uppercase; letter-spacing:.04em; }
+  .dashboard-kpi strong { font-size:1rem; color:var(--brand-title); }
+  .dashboard-shell { display:grid; grid-template-columns:13rem 1fr; gap:1.25rem; align-items:start; }
+  .dashboard-sidebar { position:sticky; top:4.5rem; }
+  .dashboard-tab-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.15rem; }
+  .dashboard-tab-item { display:flex; align-items:center; gap:.55rem; padding:.55rem .75rem; border-radius:10px; font-weight:600; font-size:.94rem; color:var(--brand-ink); text-decoration:none; }
+  .dashboard-tab-item:hover { background:rgba(148,163,184,.13); color:var(--brand-ink); }
+  .dashboard-tab-item.is-active { background:rgba(15,118,110,.12); color:var(--brand-accent); }
+  .dashboard-tab-icon { width:1.1rem; text-align:center; flex-shrink:0; }
+  .dashboard-tab-label { flex:1; }
+  .dashboard-count-badge { background:rgba(148,163,184,.2); border-radius:999px; font-size:.73rem; font-weight:700; padding:.05rem .45rem; min-width:1.4rem; text-align:center; color:var(--brand-muted); line-height:1.5; }
+  .dashboard-main { min-width:0; }
+  .dashboard-filters .label { margin-bottom:.2rem; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; }
+  .dashboard-filter-actions { display:flex; gap:.45rem; align-items:center; }
+  .dashboard-batch-toolbar-content { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.5rem; }
+  .dashboard-batch-toolbar-left,
+  .dashboard-batch-toolbar-right { display:flex; align-items:center; gap:.45rem; }
+  .dashboard-item-list { list-style:none; margin:0; padding:0; border:1px solid var(--brand-line); border-radius:14px; overflow:hidden; background:var(--brand-paper); }
+  .dashboard-row { display:grid; grid-template-columns:1.3rem 1fr; gap:.7rem; align-items:start; padding:.72rem 1rem; border-bottom:1px solid var(--brand-line); }
+  .dashboard-row:last-child { border-bottom:none; }
+  .dashboard-row--muted { opacity:.72; }
+  .dashboard-row-title { font-weight:600; font-size:.95rem; color:var(--brand-title); text-decoration:none; display:block; margin-bottom:.2rem; }
+  .dashboard-row-title:hover { color:var(--brand-accent); text-decoration:underline; }
+  .dashboard-row-meta { display:flex; flex-wrap:wrap; gap:.4rem .95rem; font-size:.78rem; color:var(--brand-muted); }
+  .dashboard-row-excerpt { font-size:.83rem; color:var(--brand-muted); margin:.1rem 0 .3rem; }
+  .dashboard-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.75rem; padding:3.2rem 1rem; color:var(--brand-muted); border:1px dashed var(--brand-line); border-radius:14px; text-align:center; }
+  .dashboard-empty-icon { font-size:2rem; opacity:.35; }
+  .dashboard-pagination { display:flex; align-items:center; justify-content:center; gap:.75rem; margin-top:1rem; }
+  @media (max-width:980px) {
+    .dashboard-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .dashboard-shell { grid-template-columns:1fr; }
+    .dashboard-sidebar { position:static; }
+    .dashboard-tab-list { flex-direction:row; flex-wrap:wrap; }
+    .dashboard-count-badge { display:none; }
+  }
+</style>
+
+<script>
+  (function () {
+    const selectAll = document.getElementById('dashboard-select-all');
+    const rowBoxes = Array.from(document.querySelectorAll('.dashboard-select-one'));
+    const selectionCount = document.getElementById('dashboard-selection-count');
+    if (!selectAll || !selectionCount) return;
+
+    const updateCount = () => {
+      const selected = rowBoxes.filter((item) => item.checked).length;
+      selectionCount.textContent = selected + ' selected';
+      if (rowBoxes.length) {
+        selectAll.checked = selected === rowBoxes.length;
+        selectAll.indeterminate = selected > 0 && selected < rowBoxes.length;
+      }
+    };
+
+    selectAll.addEventListener('change', function () {
+      rowBoxes.forEach((item) => {
+        item.checked = selectAll.checked;
+      });
+      updateCount();
+    });
+
+    rowBoxes.forEach((item) => {
+      item.addEventListener('change', updateCount);
+    });
+
+    updateCount();
+  })();
+</script>
+{% endblock %}

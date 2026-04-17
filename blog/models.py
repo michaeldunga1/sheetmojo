@@ -16,6 +16,10 @@ class Profile(models.Model):
 	postal_code = models.CharField(max_length=20, blank=True)
 	post_office_box = models.CharField(max_length=50, blank=True)
 	about_me = models.TextField(blank=True)
+	is_suspended = models.BooleanField(default=False)
+	suspended_until = models.DateTimeField(null=True, blank=True)
+	suspension_reason = models.CharField(max_length=255, blank=True)
+	commenting_restricted_until = models.DateTimeField(null=True, blank=True)
 	email_digest_enabled = models.BooleanField(default=True)
 	digest_weekday = models.PositiveSmallIntegerField(
 		default=0,
@@ -32,12 +36,30 @@ class Profile(models.Model):
 			return f"Profile of {self.user.username}"
 		return f"{self.city}, {self.country}"
 
+	@property
+	def is_currently_suspended(self):
+		if not self.is_suspended:
+			return False
+		if self.suspended_until and self.suspended_until <= timezone.now():
+			return False
+		return True
+
+	@property
+	def is_commenting_restricted(self):
+		if not self.commenting_restricted_until:
+			return False
+		return self.commenting_restricted_until > timezone.now()
+
 
 class Channel(models.Model):
 	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="channels")
 	name = models.CharField(max_length=100)
 	intro = models.CharField(max_length=255, blank=True)
 	description = models.TextField(blank=True)
+	is_suspended = models.BooleanField(default=False)
+	suspended_until = models.DateTimeField(null=True, blank=True)
+	suspension_reason = models.CharField(max_length=255, blank=True)
+	comments_enabled = models.BooleanField(default=True)
 	slug = models.SlugField(max_length=100, default='')
 	created_at = models.DateTimeField(auto_now_add=True)
 
@@ -50,6 +72,14 @@ class Channel(models.Model):
 
 	def __str__(self):
 		return f"{self.name} ({self.owner})"
+
+	@property
+	def is_currently_suspended(self):
+		if not self.is_suspended:
+			return False
+		if self.suspended_until and self.suspended_until <= timezone.now():
+			return False
+		return True
 
 	follower_count = models.PositiveIntegerField(default=0, db_index=True)
 	posts_count = models.PositiveIntegerField(default=0)
@@ -116,6 +146,21 @@ class UserFollow(models.Model):
 
 	def __str__(self):
 		return f"{self.follower} follows user {self.following}"
+
+
+class UserBlock(models.Model):
+	blocker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocks_made")
+	blocked = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blocks_received")
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["blocker", "blocked"], name="unique_user_block_pair"),
+		]
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"{self.blocker} blocked {self.blocked}"
 
 
 class Tag(models.Model):
@@ -248,10 +293,18 @@ class Notification(models.Model):
 	TYPE_FOLLOW = "follow"
 	TYPE_NEW_POST = "new_post"
 	TYPE_COMMENT = "comment"
+	TYPE_COAUTHOR_INVITE = "coauthor_invite"
+	TYPE_COAUTHOR_ACCEPTED = "coauthor_accepted"
+	TYPE_EDITOR_INVITE = "editor_invite"
+	TYPE_EDITOR_ACCEPTED = "editor_accepted"
 	TYPE_CHOICES = (
 		(TYPE_FOLLOW, "New follower"),
 		(TYPE_NEW_POST, "New post"),
 		(TYPE_COMMENT, "New comment"),
+		(TYPE_COAUTHOR_INVITE, "Co-author invite"),
+		(TYPE_COAUTHOR_ACCEPTED, "Co-author accepted"),
+		(TYPE_EDITOR_INVITE, "Editor invite"),
+		(TYPE_EDITOR_ACCEPTED, "Editor accepted"),
 	)
 
 	recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
@@ -313,3 +366,127 @@ class CommentReaction(models.Model):
 	def save(self, *args, **kwargs):
 		self.full_clean()
 		return super().save(*args, **kwargs)
+
+
+class Report(models.Model):
+	CONTENT_POST = "post"
+	CONTENT_COMMENT = "comment"
+	CONTENT_CHANNEL = "channel"
+	CONTENT_USER = "user"
+	CONTENT_CHOICES = (
+		(CONTENT_POST, "Post"),
+		(CONTENT_COMMENT, "Comment"),
+		(CONTENT_CHANNEL, "Channel"),
+		(CONTENT_USER, "User"),
+	)
+
+	REASON_SPAM = "spam"
+	REASON_ABUSE = "abuse"
+	REASON_HARASSMENT = "harassment"
+	REASON_MISINFORMATION = "misinformation"
+	REASON_ILLEGAL = "illegal"
+	REASON_OTHER = "other"
+	REASON_CHOICES = (
+		(REASON_SPAM, "Spam"),
+		(REASON_ABUSE, "Abusive content"),
+		(REASON_HARASSMENT, "Harassment"),
+		(REASON_MISINFORMATION, "Misinformation"),
+		(REASON_ILLEGAL, "Illegal content"),
+		(REASON_OTHER, "Other"),
+	)
+
+	STATUS_PENDING = "pending"
+	STATUS_REVIEWED = "reviewed"
+	STATUS_RESOLVED = "resolved"
+	STATUS_CHOICES = (
+		(STATUS_PENDING, "Pending"),
+		(STATUS_REVIEWED, "Reviewed"),
+		(STATUS_RESOLVED, "Resolved"),
+	)
+
+	reporter = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="reports_submitted")
+	content_type = models.CharField(max_length=20, choices=CONTENT_CHOICES)
+	post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, related_name="reports")
+	comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True, related_name="reports")
+	channel = models.ForeignKey(Channel, on_delete=models.CASCADE, null=True, blank=True, related_name="reports")
+	reported_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="reports_received")
+	reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+	description = models.TextField()
+	status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+	admin_notes = models.TextField(blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+	reviewed_at = models.DateTimeField(null=True, blank=True)
+
+	class Meta:
+		ordering = ["-created_at"]
+		constraints = [
+			models.UniqueConstraint(fields=["reporter", "post"], condition=models.Q(post__isnull=False), name="unique_report_per_reporter_post"),
+			models.UniqueConstraint(fields=["reporter", "comment"], condition=models.Q(comment__isnull=False), name="unique_report_per_reporter_comment"),
+			models.UniqueConstraint(fields=["reporter", "channel"], condition=models.Q(channel__isnull=False), name="unique_report_per_reporter_channel"),
+			models.UniqueConstraint(fields=["reporter", "reported_user"], condition=models.Q(reported_user__isnull=False), name="unique_report_per_reporter_user"),
+		]
+
+	def __str__(self):
+		return f"Report on {self.content_type} by {self.reporter} ({self.reason})"
+
+
+class PostCoAuthor(models.Model):
+	post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="co_authors")
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="coauthored_posts")
+	invited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="coauthor_invites_sent")
+	accepted = models.BooleanField(null=True, default=None)  # None=pending, True=accepted, False=declined
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["post", "user"], name="unique_post_coauthor"),
+		]
+		ordering = ["created_at"]
+
+	def __str__(self):
+		return f"{self.user} co-authors {self.post}"
+
+
+class ChannelEditor(models.Model):
+	channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name="editors")
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="editor_channels")
+	invited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="editor_invites_sent")
+	accepted = models.BooleanField(null=True, default=None)  # None=pending, True=accepted, False=declined
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(fields=["channel", "user"], name="unique_channel_editor"),
+		]
+		ordering = ["created_at"]
+
+	def __str__(self):
+
+		return f"{self.user} editor of {self.channel}"
+
+
+class Contact(models.Model):
+	name = models.CharField(max_length=255)
+	email = models.EmailField()
+	message = models.TextField()
+	received_at = models.DateTimeField(auto_now_add=True)
+	read = models.BooleanField(default=False)
+
+	class Meta:
+		ordering = ["-received_at"]
+
+	def __str__(self):
+		return f"Contact from {self.name} ({self.email})"
+
+
+class NewsletterSubscription(models.Model):
+	email = models.EmailField(unique=True)
+	is_active = models.BooleanField(default=True)
+	subscribed_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["-subscribed_at"]
+
+	def __str__(self):
+		status = "active" if self.is_active else "inactive"
+		return f"{self.email} ({status})"

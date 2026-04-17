@@ -1,0 +1,54 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Support Us · SheetMojo{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="columns is-centered">
+    <div class="column is-8-desktop is-10-tablet">
+      <div class="box">
+        <h1 class="title is-3">Support SheetMojo</h1>
+        <p class="subtitle is-6">Help us keep the platform fast, free, and improving every week.</p>
+
+        <div class="content">
+          <p>
+            Your support helps us maintain infrastructure, ship new features, and improve moderation and reliability.
+            Every contribution, big or small, makes a direct impact.
+          </p>
+
+          <h2 class="title is-5 mt-5">Ways To Support</h2>
+          <ul>
+            <li><strong>Become a monthly supporter:</strong> recurring support keeps development predictable.</li>
+            <li><strong>One-time donation:</strong> make a single contribution any time.</li>
+            <li><strong>Share SheetMojo:</strong> invite creators, writers, and readers.</li>
+          </ul>
+
+          <h2 class="title is-5 mt-5">Current Priorities</h2>
+          <ul>
+            <li>Better creator analytics</li>
+            <li>Advanced anti-spam and moderation tools</li>
+            <li>Newsletter and notification reliability improvements</li>
+          </ul>
+
+          <h2 class="title is-5 mt-5">PayPal</h2>
+          <p>
+            You can support directly via PayPal using this account:
+            <strong>michaeldunga1@gmail.com</strong>
+          </p>
+        </div>
+
+        <div class="buttons mt-5">
+          <a class="button is-primary" href="mailto:support@sheetmojo.com?subject=I%20want%20to%20support%20SheetMojo">
+            <span class="icon"><i class="fa-solid fa-hand-holding-heart"></i></span>
+            <span>Contact Us To Contribute</span>
+          </a>
+          <a class="button is-light" href="{% url 'blog:contact' %}" hx-boost="true">
+            <span class="icon"><i class="fa-solid fa-envelope"></i></span>
+            <span>Ask A Question</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

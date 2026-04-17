@@ -207,6 +207,16 @@ if not DEBUG:
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
+# Contact form anti-spam controls
+CONTACT_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('CONTACT_RATE_LIMIT_WINDOW_SECONDS', '600'))
+CONTACT_RATE_LIMIT_MAX_SUBMISSIONS = int(os.getenv('CONTACT_RATE_LIMIT_MAX_SUBMISSIONS', '3'))
+CONTACT_EMAIL_COOLDOWN_SECONDS = int(os.getenv('CONTACT_EMAIL_COOLDOWN_SECONDS', '60'))
+CONTACT_DUPLICATE_WINDOW_HOURS = int(os.getenv('CONTACT_DUPLICATE_WINDOW_HOURS', '24'))
+
+# Newsletter subscription anti-spam controls
+NEWSLETTER_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('NEWSLETTER_RATE_LIMIT_WINDOW_SECONDS', '600'))
+NEWSLETTER_RATE_LIMIT_MAX_SUBMISSIONS = int(os.getenv('NEWSLETTER_RATE_LIMIT_MAX_SUBMISSIONS', '5'))
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

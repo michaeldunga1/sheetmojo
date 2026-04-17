@@ -57,7 +57,7 @@
       </div>
     {% else %}
       <div class="inline-actions mt-4">
-        {% if is_following_user %}
+        {% if not is_user_blocked and not is_blocked_by_user and is_following_user %}
           <form method="post" action="{% url 'blog:user-unfollow' username=profile_user.username %}" style="display:inline">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
@@ -65,7 +65,7 @@
               <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
             </button>
           </form>
-        {% else %}
+        {% elif not is_user_blocked and not is_blocked_by_user %}
           <form method="post" action="{% url 'blog:user-follow' username=profile_user.username %}" style="display:inline">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
@@ -74,6 +74,31 @@
             </button>
           </form>
         {% endif %}
+        {% if is_user_blocked %}
+          <form method="post" action="{% url 'blog:user-unblock' username=profile_user.username %}" style="display:inline">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="button is-warning is-light" title="Unblock user" aria-label="Unblock user">
+              <span class="icon"><i class="fa-solid fa-user-check"></i></span>
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'blog:user-block' username=profile_user.username %}" style="display:inline">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="button is-danger is-light" title="Block user" aria-label="Block user" onclick="return confirm('Block this user? This will remove existing follows in both directions.')">
+              <span class="icon"><i class="fa-solid fa-user-slash"></i></span>
+            </button>
+          </form>
+        {% endif %}
+        {% if is_blocked_by_user %}
+          <span class="tag is-danger is-light">You are blocked by this user</span>
+        {% endif %}
+          {% if user.is_authenticated and not is_user_blocked and not is_blocked_by_user %}
+          <a class="button {% if has_reported_user %}is-danger is-light{% else %}is-light{% endif %}" href="{% url 'blog:user-report' username=profile_user.username %}" hx-boost="true" title="{% if has_reported_user %}Edit your report{% else %}Report this user{% endif %}" aria-label="{% if has_reported_user %}Edit your report{% else %}Report this user{% endif %}">
+            <span class="icon"><i class="{% if has_reported_user %}fa-solid{% else %}fa-regular{% endif %} fa-flag"></i></span>
+            </a>
+          {% endif %}
       </div>
     {% endif %}
   </div>

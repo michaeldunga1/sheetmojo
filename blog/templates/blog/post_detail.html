@@ -73,6 +73,9 @@
   </h1>
   <div class="is-flex is-align-items-center is-flex-wrap-wrap mt-2">
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user"></i></span><a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a></span>
+    {% for ca in post_coauthors %}
+      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-pen"></i></span><a href="{% url 'blog:user-profile' ca.user.username %}" hx-boost="true">{{ ca.user }}</a></span>
+    {% endfor %}
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a></span>
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}</span>
     <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-book-open"></i></span>{{ post.reading_time_minutes }} min read</span>
@@ -174,23 +177,99 @@
           <a class="button is-danger is-light" href="{% url 'blog:post-delete' post.channel.slug post.slug %}" hx-boost="true" title="Delete post" aria-label="Delete post">
             <span class="icon"><i class="fa-solid fa-trash"></i></span>
           </a>
+        {% elif is_post_coauthor %}
+          <a class="button is-warning is-light" href="{% url 'blog:post-edit' post.channel.slug post.slug %}" hx-boost="true" title="Edit post (co-author)" aria-label="Edit post (co-author)">
+            <span class="icon"><i class="fa-solid fa-pen-to-square"></i></span>
+          </a>
         {% endif %}
+          {% if user.is_authenticated and post.author != user %}
+          <a class="button {% if has_reported_post %}is-danger is-light{% else %}is-light{% endif %}" href="{% url 'blog:post-report' post.channel.slug post.slug %}" hx-boost="true" title="{% if has_reported_post %}Edit your report{% else %}Report this post{% endif %}" aria-label="{% if has_reported_post %}Edit your report{% else %}Report this post{% endif %}">
+            <span class="icon"><i class="{% if has_reported_post %}fa-solid{% else %}fa-regular{% endif %} fa-flag"></i></span>
+            </a>
+          {% endif %}
       </div>
     </div>
   </div>
 </div>
 
+{% if post.channel.owner == user %}
+<div class="card mb-4">
+  <div class="card-content">
+    <h2 class="title is-6 mb-3">
+      <span class="icon mr-1"><i class="fa-solid fa-user-pen"></i></span>
+      <span>Co-authors</span>
+    </h2>
+    {% for ca in post_coauthors %}
+      <div class="is-flex is-align-items-center mb-2" style="gap:0.5rem;">
+        <span><a href="{% url 'blog:user-profile' ca.user.username %}" hx-boost="true">{{ ca.user.username }}</a></span>
+        <form method="post" action="{% url 'blog:post-coauthor-remove' ca.pk %}" class="inline-form" hx-boost="true">
+          {% csrf_token %}
+          <button type="submit" class="button is-danger is-small is-light" title="Remove co-author" aria-label="Remove co-author">
+            <span class="icon"><i class="fa-solid fa-user-minus"></i></span>
+          </button>
+        </form>
+      </div>
+    {% empty %}
+      <p class="has-text-grey mb-3">No co-authors yet.</p>
+    {% endfor %}
+    {% for inv in post_coauthor_invites %}
+      <div class="is-flex is-align-items-center mb-2" style="gap:0.5rem;">
+        <span class="tag is-warning is-light">{{ inv.user.username }} — pending</span>
+        <form method="post" action="{% url 'blog:post-coauthor-remove' inv.pk %}" class="inline-form" hx-boost="true">
+          {% csrf_token %}
+          <button type="submit" class="button is-warning is-small is-light" title="Cancel invite" aria-label="Cancel invite">
+            <span class="icon"><i class="fa-solid fa-xmark"></i></span>
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+    <form method="post" action="{% url 'blog:post-invite-coauthor' post.channel.slug post.slug %}" class="mt-3" hx-boost="true">
+      {% csrf_token %}
+      <div class="field has-addons">
+        <div class="control is-expanded">
+          <input class="input is-small" type="text" name="username" placeholder="Username to invite" required autocomplete="off">
+        </div>
+        <div class="control">
+          <button class="button is-primary is-small" type="submit">
+            <span class="icon"><i class="fa-solid fa-user-plus"></i></span>
+            <span>Invite</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if my_coauthor_invite %}
+<div class="notification is-info is-light mb-4">
+  <span class="icon mr-2"><i class="fa-solid fa-user-pen"></i></span>
+  <strong>{{ my_coauthor_invite.invited_by.username }}</strong> invited you to be a co-author of this post.
+  <div class="inline-actions mt-2">
+    <form method="post" action="{% url 'blog:post-coauthor-respond' my_coauthor_invite.pk %}" class="inline-form" hx-boost="true">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="accept">
+      <button class="button is-success is-small" type="submit">Accept</button>
+    </form>
+    <form method="post" action="{% url 'blog:post-coauthor-respond' my_coauthor_invite.pk %}" class="inline-form" hx-boost="true">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="decline">
+      <button class="button is-light is-small" type="submit">Decline</button>
+    </form>
+  </div>
+</div>
+{% endif %}
 <div class="is-flex is-align-items-center is-justify-content-space-between mt-5 mb-3 comment-section-title">
   <h2 class="title is-5 mb-0">
     <span class="icon mr-2"><i class="fa-solid fa-comments"></i></span>
     <span>Comments</span>
   </h2>
   {% if user.is_authenticated %}
-    {% if user_comment %}
+    {% if can_comment and user_comment %}
       <a class="button is-warning is-light" href="{% url 'blog:comment-edit' user_comment.pk %}" hx-boost="true" title="Edit comment" aria-label="Edit comment">
         <span class="icon"><i class="fa-solid fa-pen"></i></span>
       </a>
-    {% else %}
+    {% elif can_comment %}
       <a class="button is-primary" href="{% url 'blog:comment-create' post.channel.slug post.slug %}" hx-boost="true" title="Add comment" aria-label="Add comment">
         <span class="icon"><i class="fa-solid fa-comment-medical"></i></span>
       </a>
@@ -202,6 +281,10 @@
     </a>
   {% endif %}
 </div>
+
+{% if user.is_authenticated and commenting_disabled_reason %}
+  <div class="notification is-warning is-light mb-3">{{ commenting_disabled_reason }}</div>
+{% endif %}
 
 {# User's own comment pinned at top of list #}
 {% if user_comment %}
@@ -286,6 +369,10 @@
           <a class="button is-danger is-light" href="{% url 'blog:comment-delete' comment.pk %}" hx-boost="true" title="Delete" aria-label="Delete">
             <span class="icon"><i class="fa-solid fa-trash"></i></span>
           </a>
+          {% elif user.is_authenticated %}
+          <a class="button {% if comment.pk in reported_comment_ids %}is-danger is-light{% else %}is-light{% endif %}" href="{% url 'blog:comment-report' comment.pk %}" hx-boost="true" title="{% if comment.pk in reported_comment_ids %}Edit your report{% else %}Report this comment{% endif %}" aria-label="{% if comment.pk in reported_comment_ids %}Edit your report{% else %}Report this comment{% endif %}">
+            <span class="icon"><i class="{% if comment.pk in reported_comment_ids %}fa-solid{% else %}fa-regular{% endif %} fa-flag"></i></span>
+            </a>
         {% endif %}
       </div>
     </div>

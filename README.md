@@ -37,6 +37,10 @@ DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
 DJANGO_DB_ENGINE=django.db.backends.sqlite3
 DJANGO_DB_NAME=db.sqlite3
+CONTACT_RATE_LIMIT_WINDOW_SECONDS=600
+CONTACT_RATE_LIMIT_MAX_SUBMISSIONS=3
+CONTACT_EMAIL_COOLDOWN_SECONDS=60
+CONTACT_DUPLICATE_WINDOW_HOURS=24
 ```
 
 1. Run migrations and create an admin user:
@@ -78,6 +82,12 @@ DJANGO_SECRET_KEY=use-a-strong-random-value
 DJANGO_DEBUG=False
 DJANGO_ALLOWED_HOSTS=yourusername.pythonanywhere.com
 DJANGO_CSRF_TRUSTED_ORIGINS=https://yourusername.pythonanywhere.com
+
+# Contact anti-spam (recommended production baseline)
+CONTACT_RATE_LIMIT_WINDOW_SECONDS=600
+CONTACT_RATE_LIMIT_MAX_SUBMISSIONS=3
+CONTACT_EMAIL_COOLDOWN_SECONDS=60
+CONTACT_DUPLICATE_WINDOW_HOURS=24
 
 # If using MySQL on PythonAnywhere:
 DJANGO_DB_ENGINE=django.db.backends.mysql
@@ -227,6 +237,30 @@ The app now supports environment-based configuration:
 - `DJANGO_CSRF_TRUSTED_ORIGINS`
 - `DJANGO_DB_ENGINE`, `DJANGO_DB_NAME`, `DJANGO_DB_USER`, `DJANGO_DB_PASSWORD`, `DJANGO_DB_HOST`, `DJANGO_DB_PORT`
 - `DJANGO_SESSION_COOKIE_SECURE`, `DJANGO_CSRF_COOKIE_SECURE`, `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SECURE_HSTS_*`
+- `CONTACT_RATE_LIMIT_WINDOW_SECONDS`, `CONTACT_RATE_LIMIT_MAX_SUBMISSIONS`, `CONTACT_EMAIL_COOLDOWN_SECONDS`, `CONTACT_DUPLICATE_WINDOW_HOURS`
+
+### Contact Anti-Spam Tuning
+
+The contact form supports four independent anti-spam controls:
+
+- `CONTACT_RATE_LIMIT_WINDOW_SECONDS`: rolling IP window length (default `600`)
+- `CONTACT_RATE_LIMIT_MAX_SUBMISSIONS`: max submissions per IP within window (default `3`)
+- `CONTACT_EMAIL_COOLDOWN_SECONDS`: minimum delay between submissions from the same email (default `60`)
+- `CONTACT_DUPLICATE_WINDOW_HOURS`: duplicate-message suppression window by email+message (default `24`)
+
+Recommended production tuning:
+
+- Start with the defaults above.
+- If spam volume is high, lower `CONTACT_RATE_LIMIT_MAX_SUBMISSIONS` to `2` and increase `CONTACT_EMAIL_COOLDOWN_SECONDS` to `120`.
+- If legitimate users report blocks, increase `CONTACT_RATE_LIMIT_WINDOW_SECONDS` to `900` before relaxing other checks.
+
+| Traffic level | `CONTACT_RATE_LIMIT_WINDOW_SECONDS` | `CONTACT_RATE_LIMIT_MAX_SUBMISSIONS` | `CONTACT_EMAIL_COOLDOWN_SECONDS` | `CONTACT_DUPLICATE_WINDOW_HOURS` |
+| --- | --- | --- | --- | --- |
+| Low traffic / low abuse risk | `600` | `4` | `45` | `12` |
+| Medium traffic (balanced default) | `600` | `3` | `60` | `24` |
+| High traffic / elevated abuse risk | `900` | `2` | `120` | `24` |
+
+Pick one row as a baseline, deploy, then adjust one variable at a time based on support feedback and moderation logs.
 
 ## 4. Dependency Compatibility Notes
 
