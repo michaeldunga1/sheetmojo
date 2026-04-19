@@ -81,7 +81,7 @@
           {% for channel in channels %}
             <div class="card">
               <div class="card-content">
-                <p class="title is-5 mb-2">{{ channel.name }}</p>
+                <p class="title is-5 mb-2"><a href="{% url 'blog:channel-detail' channel.slug %}" hx-boost="true">{{ channel.name }}</a></p>
                 {% if channel.intro %}
                   <p class="mb-2 is-size-7">{{ channel.intro }}</p>
                 {% endif %}

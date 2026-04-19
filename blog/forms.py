@@ -1,3 +1,38 @@
+
+from django import forms
+from .models import ChannelMembership
+
+class ChannelMembershipInviteForm(forms.Form):
+    username = forms.CharField(label="Username", max_length=150)
+    role = forms.ChoiceField(label="Role", choices=ChannelMembership.ROLE_CHOICES)
+
+    def __init__(self, *args, **kwargs):
+        self.channel = kwargs.pop('channel', None)
+        self.invited_by = kwargs.pop('invited_by', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_username(self):
+        username = self.cleaned_data['username'].strip()
+        try:
+            user = User.objects.get(username__iexact=username)
+        except User.DoesNotExist:
+            raise forms.ValidationError("No user with that username exists.")
+        if self.channel and ChannelMembership.objects.filter(channel=self.channel, user=user).exists():
+            raise forms.ValidationError("This user is already a member of the channel.")
+        return username
+
+    def save(self):
+        username = self.cleaned_data['username']
+        role = self.cleaned_data['role']
+        user = User.objects.get(username__iexact=username)
+        membership = ChannelMembership.objects.create(
+            user=user,
+            channel=self.channel,
+            role=role,
+            invited_by=self.invited_by,
+            accepted=False
+        )
+        return membership
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
@@ -67,7 +102,13 @@ class EmailAuthenticationForm(AuthenticationForm):
 class ChannelForm(forms.ModelForm):
     class Meta:
         model = Channel
-        fields = ["name", "intro", "description", "comments_enabled"]
+        fields = ["name", "intro", "description", "comments_enabled", "visibility", "allowed_users"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["allowed_users"].queryset = User.objects.all().order_by("username")
+        self.fields["allowed_users"].required = False
+        self.fields["allowed_users"].help_text = "Select users who can view this channel if visibility is set to 'Restricted'."
 
 
 class PostForm(forms.ModelForm):
@@ -147,6 +188,7 @@ class ProfileEditForm(forms.ModelForm):
             "postal_code",
             "post_office_box",
             "about_me",
+            "profile_locked",
             "email_digest_enabled",
             "digest_weekday",
             "digest_hour",
@@ -154,7 +196,6 @@ class ProfileEditForm(forms.ModelForm):
         widgets = {
             "digest_weekday": forms.Select(choices=WEEKDAY_CHOICES),
             "digest_hour": forms.Select(choices=DIGEST_HOUR_CHOICES),
-
         }
 
 

@@ -16,6 +16,7 @@ from .views import (
     ChannelCreateView,
     ChannelDetailView,
     ChannelDeleteView,
+    ChannelAnalyticsView,
     FollowChannelView,
     FollowedChannelListView,
     FollowingPostListView,
@@ -27,6 +28,7 @@ from .views import (
     ChannelListView,
     ChannelUpdateView,
     ChannelToggleCommentsView,
+    ChannelMembersView,
     ChannelInviteEditorView,
     ChannelRespondEditorView,
     ChannelRemoveEditorView,
@@ -62,11 +64,19 @@ from .views import (
     ChannelReportView,
     UserReportView,
     ReportDeleteView,
+    ChannelMembershipChangeRoleView,
+    ChannelMembershipRemoveView,
+    ChannelMembershipRespondInviteView,
+    ChannelMembershipInviteView,
 )
 
 app_name = "blog"
 
 urlpatterns = [
+                    path("channel-memberships/<int:pk>/change-role/", ChannelMembershipChangeRoleView.as_view(), name="channel-membership-change-role"),
+                path("channel-memberships/<int:pk>/remove/", ChannelMembershipRemoveView.as_view(), name="channel-membership-remove"),
+            path("channel-memberships/<int:pk>/respond/", ChannelMembershipRespondInviteView.as_view(), name="channel-membership-respond"),
+        path("channels/<slug:channel_slug>/invite-member/", ChannelMembershipInviteView.as_view(), name="channel-invite-member"),
     path("search/", GlobalSearchView.as_view(), name="search"),
     path("register/", SignUpView.as_view(), name="register"),
     path("profile/", UserProfileView.as_view(), name="profile"),
@@ -94,6 +104,8 @@ urlpatterns = [
     path("channels/<slug:channel_slug>/unfollow/", UnfollowChannelView.as_view(), name="channel-unfollow"),
     path("channels/create/", ChannelCreateView.as_view(), name="channel-create"),
     path("channels/<slug:channel_slug>/", ChannelDetailView.as_view(), name="channel-detail"),
+    path("channels/<slug:channel_slug>/members/", ChannelMembersView.as_view(), name="channel-members"),
+    path("channels/<slug:channel_slug>/analytics/", ChannelAnalyticsView.as_view(), name="channel-analytics"),
     path("channels/<slug:slug>/edit/", ChannelUpdateView.as_view(), name="channel-edit"),
     path("channels/<slug:slug>/delete/", ChannelDeleteView.as_view(), name="channel-delete"),
     path("channels/<slug:channel_slug>/toggle-comments/", ChannelToggleCommentsView.as_view(), name="channel-toggle-comments"),

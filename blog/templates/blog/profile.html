@@ -10,54 +10,60 @@
 {% block meta_robots %}noindex,nofollow{% endblock %}
 
 {% block content %}
-<header class="page-headline">
-  <p class="post-kicker mb-2">Profile</p>
-  <h1 class="title is-3 mb-2">
-    <span class="icon mr-2"><i class="fa-solid fa-id-card"></i></span>
-    <span>{% if is_own_profile %}My Profile{% else %}{{ profile_user.username }}{% endif %}</span>
-  </h1>
-  <p class="page-kicker">Author details, account stats, and published stories.</p>
-</header>
+{% if profile_locked and not is_own_profile %}
+  <div class="notification is-warning is-light mt-5">
+    <span class="icon mr-2"><i class="fa-solid fa-lock"></i></span>
+    This profile is locked and not visible to the public.
+  </div>
+{% else %}
+  <header class="page-headline">
+    <p class="post-kicker mb-2">Profile</p>
+    <h1 class="title is-3 mb-2">
+      <span class="icon mr-2"><i class="fa-solid fa-id-card"></i></span>
+      <span>{% if is_own_profile %}My Profile{% else %}{{ profile_user.username }}{% endif %}</span>
+    </h1>
+    <p class="page-kicker">Author details, account stats, and published stories.</p>
+  </header>
 
-<div class="card mb-4">
-  <div class="card-content">
-    <h2 class="title is-4 mb-2">{{ profile_user.username }}</h2>
-    <div class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
-      <span class="meta-pill">
-        <span class="icon mr-1"><i class="fa-solid fa-envelope"></i></span>
-        {% if profile_user.email %}
-          {{ profile_user.email }}
-        {% else %}
-          Email not set
-        {% endif %}
-      </span>
-      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Joined {{ profile_user.date_joined|date:"M j, Y" }}</span>
-      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>{{ user_channel_count }} channel{{ user_channel_count|pluralize }}</span>
-      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ user_post_count }} post{{ user_post_count|pluralize }}</span>
-      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ user_follower_count }} follower{{ user_follower_count|pluralize }}</span>
-      <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-plus"></i></span>{{ user_following_count }} following</span>
-    </div>
-    {% if profile_obj %}
-      <p class="meta-text mb-2">
-        <span class="icon mr-1"><i class="fa-solid fa-earth-africa"></i></span>
-        {{ profile_obj.city }}{% if profile_obj.city and profile_obj.country %}, {% endif %}{{ profile_obj.country }}
-      </p>
-      {% if profile_obj.about_me %}
-        <div class="post-body">{{ profile_obj.about_me }}</div>
-      {% endif %}
-    {% endif %}
-    {% if is_own_profile %}
-      <div class="inline-actions mt-4 is-flex is-align-items-center is-flex-wrap-wrap">
-        <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}" hx-boost="true" title="Edit profile" aria-label="Edit profile">
-          <span class="icon"><i class="fa-solid fa-user-pen"></i></span>
-        </a>
-        <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}" hx-boost="true" title="Delete account" aria-label="Delete account">
-          <span class="icon"><i class="fa-solid fa-user-xmark"></i></span>
-        </a>
+  <div class="card mb-4">
+    <div class="card-content">
+      <h2 class="title is-4 mb-2">{{ profile_user.username }}</h2>
+      <div class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
+        <span class="meta-pill">
+          <span class="icon mr-1"><i class="fa-solid fa-envelope"></i></span>
+          {% if profile_user.email %}
+            {{ profile_user.email }}
+          {% else %}
+            Email not set
+          {% endif %}
+        </span>
+        <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-calendar"></i></span>Joined {{ profile_user.date_joined|date:"M j, Y" }}</span>
+        <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span>{{ user_channel_count }} channel{{ user_channel_count|pluralize }}</span>
+        <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-newspaper"></i></span>{{ user_post_count }} post{{ user_post_count|pluralize }}</span>
+        <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-group"></i></span>{{ user_follower_count }} follower{{ user_follower_count|pluralize }}</span>
+        <span class="meta-pill"><span class="icon mr-1"><i class="fa-solid fa-user-plus"></i></span>{{ user_following_count }} following</span>
       </div>
-    {% else %}
-      <div class="inline-actions mt-4">
-        {% if not is_user_blocked and not is_blocked_by_user and is_following_user %}
+      {% if profile_obj %}
+        <p class="meta-text mb-2">
+          <span class="icon mr-1"><i class="fa-solid fa-earth-africa"></i></span>
+          {{ profile_obj.city }}{% if profile_obj.city and profile_obj.country %}, {% endif %}{{ profile_obj.country }}
+        </p>
+        {% if profile_obj.about_me %}
+          <div class="post-body">{{ profile_obj.about_me }}</div>
+        {% endif %}
+      {% endif %}
+      {% if is_own_profile %}
+        <div class="inline-actions mt-4 is-flex is-align-items-center is-flex-wrap-wrap">
+          <a class="button is-warning is-light" href="{% url 'blog:profile-edit' %}" hx-boost="true" title="Edit profile" aria-label="Edit profile">
+            <span class="icon"><i class="fa-solid fa-user-pen"></i></span>
+          </a>
+          <a class="button is-danger is-light" href="{% url 'blog:account-delete' %}" hx-boost="true" title="Delete account" aria-label="Delete account">
+            <span class="icon"><i class="fa-solid fa-user-xmark"></i></span>
+          </a>
+        </div>
+      {% else %}
+        <div class="inline-actions mt-4">
+          {% if not is_user_blocked and not is_blocked_by_user and is_following_user %}
           <form method="post" action="{% url 'blog:user-unfollow' username=profile_user.username %}" style="display:inline">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
@@ -232,5 +238,6 @@
       {% endfor %}
     </div>
   </nav>
+{% endif %}
 {% endif %}
 {% endblock %}

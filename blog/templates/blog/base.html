@@ -10,6 +10,16 @@
   })(window,document,'script','dataLayer','GTM-MMDH24ZZ');</script>
   <!-- End Google Tag Manager -->
 
+  <!-- Google tag (gtag.js) 
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6WHE2RB68J"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-6WHE2RB68J');
+  </script> -->
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}SheetMojo{% endblock %}</title>
@@ -650,58 +660,14 @@
         margin-bottom: 1rem;
       }
     }
-    /* Tooltip styles for post previews */
-    [data-tooltip] {
-      position: relative;
-      cursor: help;
-    }
-    [data-tooltip]:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--brand-ink);
-      color: var(--brand-paper);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      line-height: 1.4;
-      max-width: 280px;
-      text-align: left;
-      word-wrap: break-word;
-      white-space: normal;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      pointer-events: none;
-      font-weight: normal;
-      font-style: normal;
-    }
-    [data-tooltip]:hover::before {
-      content: '';
-      position: absolute;
-      bottom: calc(100% + 2px);
-      left: 50%;
-      transform: translateX(-50%);
-      border: 4px solid transparent;
-      border-top-color: var(--brand-ink);
-      z-index: 1001;
-      pointer-events: none;
-    }
-    @media (max-width: 768px) {
-      [data-tooltip]:hover::after,
-      [data-tooltip]:hover::before {
-        display: none;
-      }
-    }
   </style>
 </head>
 <body>
   
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MMDH24ZZ"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MMDH24ZZ"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
 
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <nav class="navbar is-light" role="navigation" aria-label="main navigation">

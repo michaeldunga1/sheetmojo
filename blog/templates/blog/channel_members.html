@@ -1,0 +1,29 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Members | {{ channel.name }} | SheetMojo{% endblock %}
+{% block meta_description %}Manage members and invitations for {{ channel.name }}.{% endblock %}
+
+{% block content %}
+<header class="page-headline">
+  <p class="post-kicker mb-2">Channel Members</p>
+  <h1 class="title is-3 mb-2">
+    <span class="icon mr-2"><i class="fa-solid fa-user-group"></i></span>
+    <span>{{ channel.name }}</span>
+  </h1>
+  <p class="page-kicker">Manage accepted members, pending invites, and roles for this channel.</p>
+  <div class="inline-actions is-flex is-align-items-center is-flex-wrap-wrap">
+    <a class="button is-light" href="{% url 'blog:channel-detail' channel.slug %}" hx-boost="true">
+      <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+      <span>Back to channel</span>
+    </a>
+    {% if channel.owner_id == user.id %}
+      <a class="button is-light" href="{% url 'blog:channel-analytics' channel.slug %}" hx-boost="true">
+        <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
+        <span>Analytics</span>
+      </a>
+    {% endif %}
+  </div>
+</header>
+
+{% include "blog/partials/channel_members_panel.html" %}
+{% endblock %}

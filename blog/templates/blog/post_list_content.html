@@ -6,7 +6,7 @@
     <div class="card-content post-card">
       <div class="post-card-body">
         {% if post.image_exists %}
-          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" aria-label="{{ post.title }}" data-tooltip="{{ post.body|excerpt }}">
+          <a class="post-card-thumb" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" aria-label="{{ post.title }}">
             <img src="{{ post.image.url }}" alt="{{ post.title }}">
           </a>
         {% endif %}
@@ -14,7 +14,7 @@
         {% if not post.is_published %}
           <p class="mb-2"><span class="tag is-warning is-light">Draft</span></p>
         {% endif %}
-        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true" data-tooltip="{{ post.body|excerpt }}">{{ post.title }}</a></h3>
+        <h3 class="title is-4 mb-2"><a class="has-text-dark" href="{% url 'blog:post-detail' post.channel.slug post.slug %}" hx-boost="true">{{ post.title }}</a></h3>
         {% with post_tags=post.tags.all %}
           {% if post_tags %}
             <div class="tags mb-2">
@@ -27,6 +27,8 @@
         <div class="post-summary markdown-content">{{ post.body|markdownify|truncatewords_html:40 }}</div>
         <p class="meta-text mb-3">
           <span class="icon mr-1"><i class="fa-solid fa-user"></i></span>By <a href="{% url 'blog:user-profile' post.author.username %}" hx-boost="true">{{ post.author }}</a>
+          <span class="mx-2">&middot;</span>
+          <span class="icon mr-1"><i class="fa-solid fa-layer-group"></i></span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a>
           <span class="mx-2">&middot;</span>
           <span class="icon mr-1"><i class="fa-solid fa-clock"></i></span>{{ post.created_at|date:"M j, Y" }}
           <span class="mx-2">&middot;</span>

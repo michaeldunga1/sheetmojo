@@ -26,10 +26,12 @@
     {% endfor %}
 
     <h2 class="title is-5 mt-5 mb-3">Profile Details</h2>
+
     {% for field in profile_form %}
       <div class="field">
         <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         <div class="control">{{ field }}</div>
+        {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
         {% if field.errors %}
           <p class="help is-danger">{{ field.errors|striptags }}</p>
         {% endif %}

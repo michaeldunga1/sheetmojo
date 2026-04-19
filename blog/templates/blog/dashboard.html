@@ -244,7 +244,7 @@
                 <div class="dashboard-row-body">
                   <a class="dashboard-row-title" href="{{ post.get_absolute_url }}" hx-boost="true">{{ post.title }}</a>
                   <div class="dashboard-row-meta">
-                    <span>{{ post.channel.name }}</span>
+                    <span><a href="{% url 'blog:channel-detail' post.channel.slug %}" hx-boost="true">{{ post.channel.name }}</a></span>
                     <span>{{ post.created_at|date:"M j, Y" }}</span>
                     <span>Comments: {{ post.comment_count }}</span>
                     <span>Flags: {{ post.report_count }}</span>
