@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Turn CSV or JSON data into charts with SheetMojo's graph converter." />
+  <meta name="keywords" content="CSV chart, JSON chart, graph converter, data visualization, online chart maker" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CSV / JSON to Chart Converter — SheetMojo" />
+  <meta property="og:description" content="Turn CSV or JSON data into charts with SheetMojo's graph converter." />
+  <meta property="og:site_name" content="SheetMojo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CSV / JSON to Chart Converter — SheetMojo" />
+  <meta name="twitter:description" content="Turn CSV or JSON data into charts with SheetMojo's graph converter." />
+  <link rel="canonical" href="/chart" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <main class="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <a href="/" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">← Back to home</a>
+      <div class="min-w-0 flex-1">
+        <h1 class="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">CSV / JSON to Chart Converter</h1>
+        <p class="mt-3 text-slate-600">Paste data in CSV or JSON form and visualize it instantly as a bar, line, or pie chart.</p>
+      </div>
+    </div>
+
+    <div class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-2xl">
+      <div class="grid gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-slate-900" for="data-input">CSV or JSON data</label>
+          <textarea id="data-input" placeholder='CSV: name,value\nJan,100\nFeb,120\n\nJSON: [{"name":"Jan","value":100},{"name":"Feb","value":120}]' class="mt-3 min-h-[260px] w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"></textarea>
+        </div>
+
+        <!-- FIX: each label+select pair is now wrapped in its own div so they align correctly in the grid -->
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold text-slate-900" for="data-format">Input format</label>
+            <select id="data-format" class="mt-3 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-900" for="chart-type">Chart type</label>
+            <select id="chart-type" class="mt-3 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+              <option value="bar">Bar</option>
+              <option value="line">Line</option>
+              <option value="pie">Pie</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-900" for="x-field">Label field</label>
+            <select id="x-field" class="mt-3 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"></select>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 items-end">
+          <div>
+            <label class="block text-sm font-semibold text-slate-900" for="y-field">Value field</label>
+            <select id="y-field" class="mt-3 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"></select>
+          </div>
+          <div class="space-x-3">
+            <button id="render-chart" class="inline-flex items-center justify-center rounded-3xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Render Chart</button>
+            <button id="clear-chart" class="inline-flex items-center justify-center rounded-3xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Clear</button>
+          </div>
+        </div>
+
+        <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+          <p id="status" class="text-sm leading-6 text-slate-600">Paste your data and choose fields to preview a chart.</p>
+        </div>
+
+        <div class="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <canvas id="chart-canvas" class="w-full h-[320px]"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/chart.js"></script>
+</body>
+</html>

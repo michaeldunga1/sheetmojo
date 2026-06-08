@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="SheetMojo is a free suite of web utilities for converting pages, downloading YouTube media, transforming CSV, and counting text." />
+  <meta name="keywords" content="PDF converter, YouTube downloader, CSV to JSON, character counter, word counter, online tools, free utilities" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SheetMojo Tools — PDF, YouTube, CSV, and Text Utilities" />
+  <meta property="og:description" content="Try SheetMojo's fast, elegant utility suite for converting web pages to PDF, downloading YouTube media, converting CSV to JSON, and counting text." />
+  <meta property="og:site_name" content="SheetMojo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SheetMojo Tools — PDF, YouTube, CSV, and Text Utilities" />
+  <meta name="twitter:description" content="Try SheetMojo's fast, elegant utility suite for converting web pages to PDF, downloading YouTube media, converting CSV to JSON, and counting text." />
+  <link rel="canonical" href="/" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","name":"SheetMojo","url":"/","description":"Free suite of online tools for PDF conversion, YouTube downloads, CSV to JSON, and text counters."}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <main class="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+    <div class="rounded-[2rem] border border-slate-200 bg-white p-10 shadow-2xl">
+      <p class="text-sm font-semibold uppercase tracking-[0.35em] text-sky-600">SheetMojo</p>
+      <h1 class="mt-4 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">Fast tools for creators and data workers.</h1>
+      <p class="mt-4 max-w-2xl text-base leading-7 text-slate-600">No login required. Convert web pages to PDF, extract YouTube audio/video, transform CSV, and count text with clean, elegant utilities.</p>
+
+      <div class="mt-8">
+        <label for="tool-search" class="sr-only">Search tools</label>
+        <input id="tool-search" type="search" placeholder="Search tools by name or description..." class="w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+      </div>
+    </div>
+
+    <div class="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3" id="tool-grid">
+      <a href="/pdf" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="Web Page to PDF" data-description="Capture any public page as a polished PDF file.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-sky-600">PDF</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">Web Page to PDF</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Capture any public page as a polished PDF file.</p>
+      </a>
+      <a href="/youtube" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="YouTube to Audio / Video Converter" data-description="Export YouTube audio or video with one click.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-rose-600">YouTube</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">Audio / Video Downloader</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Export YouTube audio or video with one click.</p>
+      </a>
+      <a href="/csv-json" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="CSV to JSON Converter" data-description="Convert spreadsheet data into structured JSON objects instantly.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">CSV</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">CSV to JSON</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Convert spreadsheet data into structured JSON objects instantly.</p>
+      </a>
+      <a href="/excel" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="Excel to JSON/CSV Converter" data-description="Upload Excel files and export them as JSON or CSV instantly.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Excel</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">Excel to JSON / CSV</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Upload Excel files and export them as JSON or CSV instantly.</p>
+      </a>
+      <a href="/chart" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="CSV / JSON to Chart Converter" data-description="Generate charts from CSV or JSON data with a live preview.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-600">Chart</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">CSV / JSON to Chart</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Turn CSV or JSON data into interactive charts instantly.</p>
+      </a>
+      <a href="/char-counter" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="Character Counter" data-description="Measure text length and non-whitespace counts instantly.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-violet-600">Text</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">Character Counter</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Measure text length and non-whitespace counts instantly.</p>
+      </a>
+      <a href="/word-counter" class="tool-card group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" data-title="Word Counter" data-description="Count words, sentences, and paragraphs with ease.">
+        <p class="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600">Text</p>
+        <h2 class="mt-4 text-xl font-semibold text-slate-900">Word Counter</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Count words, sentences, and paragraphs with ease.</p>
+      </a>
+    </div>
+
+    <p id="no-results" class="mt-6 hidden text-center text-sm text-slate-600">No tools match your search. Try broader terms like "PDF" or "CSV".</p>
+  </main>
+  <script src="/search.js"></script>
+</body>
+</html>

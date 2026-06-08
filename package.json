@@ -1,0 +1,24 @@
+{
+  "name": "sheetmojo",
+  "version": "1.0.0",
+  "description": "A lightweight VPS-ready tool site for PDF, YouTube, CSV, and text utilities.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:prod": "NODE_ENV=production node server.js"
+  },
+  "keywords": ["productivity","pdf","youtube","csv","text","tools"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "helmet": "^7.0.0",
+    "puppeteer": "^25.1.0",
+    "ytdl-core": "^4.11.5"
+  }
+}
