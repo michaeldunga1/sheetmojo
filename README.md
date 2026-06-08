@@ -32,6 +32,118 @@ npm start
 http://localhost:3000
 ```
 
+## SSH Setup
+
+### How to Create SSH Keys
+
+SSH keys provide secure, password-free authentication to your VPS. Generate a key pair on your local machine:
+
+```bash
+ssh-keygen -t ed25519 -C "your-email@example.com"
+```
+
+When prompted:
+- **File location:** Press Enter to use the default (`~/.ssh/id_ed25519`)
+- **Passphrase:** Leave blank (or set one for extra security)
+
+This creates:
+- `~/.ssh/id_ed25519` (private key — keep this safe!)
+- `~/.ssh/id_ed25519.pub` (public key — share this)
+
+View your public key:
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+### How to Connect to a VPS Server
+
+#### Option 1: Using Password (Initial Setup)
+
+On your local machine, connect via SSH:
+
+```bash
+ssh root@YOUR_SERVER_IP
+```
+
+Hostinger provides the root password in hPanel. After logging in:
+
+1. Create a non-root user for security:
+
+```bash
+adduser deploy
+usermod -aG sudo deploy
+exit
+```
+
+2. Reconnect as the new user:
+
+```bash
+ssh deploy@YOUR_SERVER_IP
+```
+
+#### Option 2: Using SSH Keys (Recommended for Automation)
+
+1. **Add your public key to the server:**
+
+```bash
+ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@YOUR_SERVER_IP
+```
+
+2. **Connect without a password:**
+
+```bash
+ssh deploy@YOUR_SERVER_IP
+```
+
+#### Option 3: Manual SSH Key Setup
+
+If `ssh-copy-id` doesn't work:
+
+1. Create the `.ssh` directory on the server:
+
+```bash
+ssh deploy@YOUR_SERVER_IP "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+```
+
+2. Copy your public key to the server:
+
+```bash
+cat ~/.ssh/id_ed25519.pub | ssh deploy@YOUR_SERVER_IP "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+```
+
+3. Test the connection:
+
+```bash
+ssh deploy@YOUR_SERVER_IP
+```
+
+#### SSH Config (Optional)
+
+Create a shortcut by editing `~/.ssh/config` on your local machine:
+
+```
+Host sheetmojo
+    HostName YOUR_SERVER_IP
+    User deploy
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Then simply use:
+
+```bash
+ssh sheetmojo
+```
+
+#### Useful SSH Commands
+
+```bash
+ssh deploy@YOUR_SERVER_IP              # Connect to the server
+ssh deploy@YOUR_SERVER_IP "command"    # Run a remote command
+scp file.txt deploy@YOUR_SERVER_IP:~   # Copy a file to the server
+scp -r folder deploy@YOUR_SERVER_IP:~  # Copy a folder recursively
+```
+
 ## VPS deployment on Ubuntu 24.04 LTS
 
 1. Install system packages required by Puppeteer:
