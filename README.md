@@ -144,6 +144,79 @@ scp file.txt deploy@YOUR_SERVER_IP:~   # Copy a file to the server
 scp -r folder deploy@YOUR_SERVER_IP:~  # Copy a folder recursively
 ```
 
+## GitHub-based deployment routine
+
+Use GitHub as the source of truth and deploy from your VPS with a simple clone or pull.
+
+### Clone the repo on the VPS
+
+```bash
+cd ~
+git clone git@github.com:michaeldunga1/sheetmojo.git
+cd sheetmojo
+```
+
+If you prefer HTTPS:
+
+```bash
+git clone https://github.com/michaeldunga1/sheetmojo.git
+cd sheetmojo
+```
+
+### Update an existing deployment
+
+```bash
+cd ~/sheetmojo
+git pull origin main
+```
+
+### Install dependencies and configure environment
+
+```bash
+npm install --production
+cp .env.example .env
+nano .env
+```
+
+### Start or restart the app
+
+Use PM2:
+
+```bash
+npm install -g pm2
+pm2 start server.js --name sheetmojo
+pm2 save
+```
+
+Or use systemd:
+
+```bash
+sudo cp sheetmojo.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable sheetmojo
+sudo systemctl restart sheetmojo
+```
+
+### Deploy workflow
+
+1. Make changes locally.
+2. Commit and push to GitHub:
+
+```bash
+git add -A
+git commit -m "Your message"
+git push origin main
+```
+
+3. Pull the update on the VPS:
+
+```bash
+cd ~/sheetmojo
+git pull origin main
+npm install --production
+pm2 restart sheetmojo
+```
+
 ## VPS deployment on Ubuntu 24.04 LTS
 
 1. Install system packages required by Puppeteer:
