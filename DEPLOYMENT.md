@@ -1,6 +1,6 @@
-# SheetMojo Deployment Guide
+# Swiftener Deployment Guide
 
-This guide covers deploying SheetMojo to a Hostinger VPS running Ubuntu 24.04 LTS.
+This guide covers deploying Swiftener to a Hostinger VPS running Ubuntu 24.04 LTS.
 
 ---
 
@@ -102,8 +102,8 @@ npm --version
 ### 5. Clone and Set Up the App
 
 ```bash
-git clone https://github.com/yourname/sheetmojo.git
-cd sheetmojo
+git clone https://github.com/yourname/swiftener.git
+cd swiftener
 npm install --production
 ```
 
@@ -127,7 +127,7 @@ NODE_ENV=production
 
 ```bash
 npm install -g pm2
-pm2 start server.js --name "sheetmojo"
+pm2 start server.js --name "swiftener"
 pm2 startup systemd -u deploy --hp /home/deploy
 pm2 save
 ```
@@ -136,7 +136,7 @@ Check status:
 
 ```bash
 pm2 status
-pm2 logs sheetmojo
+pm2 logs swiftener
 ```
 
 #### Option B: systemd (Lightweight)
@@ -144,30 +144,30 @@ pm2 logs sheetmojo
 Copy the service file:
 
 ```bash
-sudo cp sheetmojo.service /etc/systemd/system/
+sudo cp swiftener.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable sheetmojo
-sudo systemctl start sheetmojo
+sudo systemctl enable swiftener
+sudo systemctl start swiftener
 ```
 
 Check status:
 
 ```bash
-sudo systemctl status sheetmojo
-sudo journalctl -u sheetmojo -f
+sudo systemctl status swiftener
+sudo journalctl -u swiftener -f
 ```
 
 ### 7. Configure Nginx
 
 ```bash
-sudo cp nginx.conf.example /etc/nginx/sites-available/sheetmojo
-sudo nano /etc/nginx/sites-available/sheetmojo
+sudo cp nginx.conf.example /etc/nginx/sites-available/swiftener
+sudo nano /etc/nginx/sites-available/swiftener
 ```
 
 Replace `yourdomain.com` with your actual domain. Then:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/sheetmojo /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/swiftener /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -211,20 +211,20 @@ Wait a few minutes for DNS propagation, then visit `https://yourdomain.com`.
 ```bash
 pm2 list                    # List all processes
 pm2 status                  # Show process status
-pm2 logs sheetmojo          # View logs
-pm2 restart sheetmojo       # Restart the app
-pm2 stop sheetmojo          # Stop the app
-pm2 delete sheetmojo        # Remove from PM2
+pm2 logs swiftener          # View logs
+pm2 restart swiftener       # Restart the app
+pm2 stop swiftener          # Stop the app
+pm2 delete swiftener        # Remove from PM2
 ```
 
 ### systemd
 
 ```bash
-sudo systemctl status sheetmojo             # Check status
-sudo systemctl restart sheetmojo            # Restart
-sudo systemctl stop sheetmojo               # Stop
-sudo journalctl -u sheetmojo -f             # View logs (follow mode)
-sudo journalctl -u sheetmojo --lines 50     # Last 50 log lines
+sudo systemctl status swiftener             # Check status
+sudo systemctl restart swiftener            # Restart
+sudo systemctl stop swiftener               # Stop
+sudo journalctl -u swiftener -f             # View logs (follow mode)
+sudo journalctl -u swiftener --lines 50     # Last 50 log lines
 ```
 
 ### Nginx

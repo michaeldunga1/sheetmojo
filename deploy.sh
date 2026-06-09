@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deployment script for SheetMojo
+# Deployment script for Swiftener
 # Usage: ./deploy.sh <server_ip> <username> <domain>
 # Example: ./deploy.sh 192.168.1.100 deploy yourdomain.com
 
@@ -15,7 +15,7 @@ fi
 SERVER_IP=$1
 USERNAME=$2
 DOMAIN=$3
-APP_NAME="sheetmojo"
+APP_NAME="swiftener"
 REMOTE_PATH="/home/$USERNAME/$APP_NAME"
 
 echo "🚀 Deploying $APP_NAME to $SERVER_IP as $USERNAME"
@@ -62,7 +62,7 @@ if [ "$choice" = "1" ]; then
 elif [ "$choice" = "2" ]; then
   echo "🔧 Setting up systemd..."
   ssh $USERNAME@$SERVER_IP "
-    sudo cp $REMOTE_PATH/sheetmojo.service /etc/systemd/system/
+    sudo cp $REMOTE_PATH/swiftener.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable $APP_NAME
     sudo systemctl start $APP_NAME

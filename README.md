@@ -1,4 +1,4 @@
-# SheetMojo
+# Swiftener
 
 A lightweight productivity site for VPS deployment. It includes:
 

@@ -1,16 +1,16 @@
 [Unit]
-Description=SheetMojo - Lightweight VPS tool suite
+Description=Swiftener - Lightweight VPS tool suite
 After=network.target
 
 [Service]
 Type=simple
 User=deploy
-WorkingDirectory=/home/deploy/sheetmojo
-EnvironmentFile=/home/deploy/sheetmojo/.env
+WorkingDirectory=/home/deploy/swiftener
+EnvironmentFile=/home/deploy/swiftener/.env
 Environment="NODE_ENV=production"
 
 # Start the app
-ExecStart=/home/deploy/.nvm/versions/node/v24.16.0/bin/node /home/deploy/sheetmojo/server.js
+ExecStart=/home/deploy/.nvm/versions/node/v24.16.0/bin/node /home/deploy/swiftener/server.js
 
 # Restart on failure
 Restart=on-failure

@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'sheetmojo',
+      name: 'swiftener',
       script: './index.js',
       instances: 1,
       autorestart: true,
