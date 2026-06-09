@@ -1,6 +1,6 @@
 # Swiftener
 
-A lightweight productivity site for VPS deployment. It includes:
+A lightweight productivity site deployed at [swiftener.com](https://swiftener.com). It includes:
 
 - Web page to PDF converter
 - YouTube audio/video downloader
@@ -39,7 +39,7 @@ http://localhost:3000
 SSH keys provide secure, password-free authentication to your VPS. Generate a key pair on your local machine:
 
 ```bash
-ssh-keygen -t ed25519 -C "your-email@example.com"
+ssh-keygen -t ed25519 -C "michaeldunga1@gmail.com"
 ```
 
 When prompted:
@@ -56,14 +56,12 @@ View your public key:
 cat ~/.ssh/id_ed25519.pub
 ```
 
-### How to Connect to a VPS Server
+### How to Connect to the VPS
 
 #### Option 1: Using Password (Initial Setup)
 
-On your local machine, connect via SSH:
-
 ```bash
-ssh root@YOUR_SERVER_IP
+ssh root@187.124.118.77
 ```
 
 Hostinger provides the root password in hPanel. After logging in:
@@ -71,15 +69,15 @@ Hostinger provides the root password in hPanel. After logging in:
 1. Create a non-root user for security:
 
 ```bash
-adduser deploy
-usermod -aG sudo deploy
+adduser dunga
+usermod -aG sudo dunga
 exit
 ```
 
 2. Reconnect as the new user:
 
 ```bash
-ssh deploy@YOUR_SERVER_IP
+ssh dunga@187.124.118.77
 ```
 
 #### Option 2: Using SSH Keys (Recommended for Automation)
@@ -87,114 +85,84 @@ ssh deploy@YOUR_SERVER_IP
 1. **Add your public key to the server:**
 
 ```bash
-ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@YOUR_SERVER_IP
+ssh-copy-id -i ~/.ssh/id_ed25519.pub dunga@187.124.118.77
 ```
 
 2. **Connect without a password:**
 
 ```bash
-ssh deploy@YOUR_SERVER_IP
+ssh dunga@187.124.118.77
 ```
 
 #### Option 3: Manual SSH Key Setup
 
 If `ssh-copy-id` doesn't work:
 
-1. Create the `.ssh` directory on the server:
-
 ```bash
-ssh deploy@YOUR_SERVER_IP "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+ssh dunga@187.124.118.77 "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+cat ~/.ssh/id_ed25519.pub | ssh dunga@187.124.118.77 "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+ssh dunga@187.124.118.77
 ```
 
-2. Copy your public key to the server:
-
-```bash
-cat ~/.ssh/id_ed25519.pub | ssh deploy@YOUR_SERVER_IP "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-```
-
-3. Test the connection:
-
-```bash
-ssh deploy@YOUR_SERVER_IP
-```
-
-#### SSH Config (Optional)
+#### SSH Config (Recommended)
 
 Create a shortcut by editing `~/.ssh/config` on your local machine:
 
 ```
-Host sheetmojo
-    HostName YOUR_SERVER_IP
-    User deploy
+Host swiftener
+    HostName 187.124.118.77
+    User dunga
     IdentityFile ~/.ssh/id_ed25519
 ```
 
 Then simply use:
 
 ```bash
-ssh sheetmojo
+ssh swiftener
 ```
 
 #### Useful SSH Commands
 
 ```bash
-ssh deploy@YOUR_SERVER_IP              # Connect to the server
-ssh deploy@YOUR_SERVER_IP "command"    # Run a remote command
-scp file.txt deploy@YOUR_SERVER_IP:~   # Copy a file to the server
-scp -r folder deploy@YOUR_SERVER_IP:~  # Copy a folder recursively
+ssh swiftener                          # Connect to the server
+ssh swiftener "command"                # Run a remote command
+scp file.txt swiftener:~               # Copy a file to the server
+scp -r folder swiftener:~             # Copy a folder recursively
 ```
 
-## GitHub-based deployment routine
+## GitHub-based Deployment Routine
 
-Use GitHub as the source of truth and deploy from your VPS with a simple clone or pull.
+Use GitHub as the source of truth and deploy from the VPS with a simple clone or pull.
 
 ### Clone the repo on the VPS
 
 ```bash
 cd ~
-git clone git@github.com:michaeldunga1/sheetmojo.git
-cd sheetmojo
-```
-
-If you prefer HTTPS:
-
-```bash
-git clone https://github.com/michaeldunga1/sheetmojo.git
-cd sheetmojo
+git clone git@github.com:michaeldunga1/swiftener.git
+cd swiftener
 ```
 
 ### Update an existing deployment
 
 ```bash
-cd ~/sheetmojo
+cd ~/swiftener
 git pull origin main
 ```
 
 ### Install dependencies and configure environment
 
 ```bash
-npm install --production
+PUPPETEER_SKIP_DOWNLOAD=true npm install --omit=dev
 cp .env.example .env
 nano .env
 ```
 
 ### Start or restart the app
 
-Use PM2:
-
 ```bash
 npm install -g pm2
-pm2 start server.js --name sheetmojo
+pm2 start server.js --name swiftener
 pm2 save
-```
-
-Or use systemd:
-
-```bash
-sudo cp sheetmojo.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable sheetmojo
-sudo systemctl restart sheetmojo
 ```
 
 ### Deploy workflow
@@ -211,67 +179,122 @@ git push origin main
 3. Pull the update on the VPS:
 
 ```bash
-cd ~/sheetmojo
+cd ~/swiftener
 git pull origin main
-npm install --production
-pm2 restart sheetmojo
+PUPPETEER_SKIP_DOWNLOAD=true npm install --omit=dev
+pm2 restart swiftener
 ```
 
-## VPS deployment on Ubuntu 24.04 LTS
+## VPS Deployment on Ubuntu 24.04 LTS (Hostinger)
+
+**Server IP:** `187.124.118.77`  
+**User:** `dunga`  
+**App directory:** `~/swiftener`  
+**Domain:** [swiftener.com](https://swiftener.com)  
+**Process manager:** PM2  
+**Reverse proxy:** nginx  
+**SSL:** Let's Encrypt via Certbot  
 
 1. Install system packages required by Puppeteer:
 
 ```bash
-sudo apt update && sudo apt install -y ca-certificates fonts-liberation libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libxrender1 libxext6 libnss3 libxss1 libasound2
+sudo apt update && sudo apt install -y ca-certificates fonts-liberation libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libxrender1 libxext6 libnss3 libxss1 libasound2 chromium-browser
 ```
 
-2. Install Node.js 22 or later and npm, then install dependencies:
+2. Install Node.js 22 or later, then install dependencies (skipping Puppeteer's Chrome download since system Chromium is used):
 
 ```bash
-npm install
+PUPPETEER_SKIP_DOWNLOAD=true npm install --omit=dev
 ```
 
 3. Copy environment defaults into `.env`:
 
 ```bash
 cp .env.example .env
+nano .env
 ```
 
-4. Start the app on the public interface:
+4. Start the app with PM2:
 
 ```bash
-npm run start:prod
+npm install -g pm2
+pm2 start server.js --name swiftener
+pm2 save
+pm2 startup
 ```
 
-4. Recommended production options:
+5. Configure nginx reverse proxy at `/etc/nginx/sites-available/swiftener`:
 
-- Use `pm2` or `systemd` to keep the app running after reboot.
-- Use the included `ecosystem.config.js` if you deploy with PM2:
+```nginx
+server {
+    server_name swiftener.com www.swiftener.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/swiftener.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/swiftener.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    if ($host = www.swiftener.com) { return 301 https://$host$request_uri; }
+    if ($host = swiftener.com) { return 301 https://$host$request_uri; }
+    listen 80;
+    server_name swiftener.com www.swiftener.com;
+    return 404;
+}
+```
+
+6. Enable the site and get SSL certificate:
 
 ```bash
-pm install -g pm2
-pm start
-# or
-pm run start:prod
-pm2 start ecosystem.config.js
+sudo ln -s /etc/nginx/sites-available/swiftener /etc/nginx/sites-enabled/
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d swiftener.com -d www.swiftener.com
+sudo nginx -t && sudo systemctl reload nginx
 ```
+
+## Puppeteer Notes
+
+Puppeteer is configured to use the system-installed Chromium instead of downloading its own:
+
+```js
+const browser = await puppeteer.launch({
+    executablePath: '/usr/bin/chromium-browser',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
+```
+
+The `.npmrc` file in the project root sets `PUPPETEER_SKIP_DOWNLOAD=true` to prevent Chrome downloads during `npm install`.
+
+## VPS Recommendations
+
+- Use PM2 to keep the app running after reboot (`pm2 startup && pm2 save`).
+- App binds to `0.0.0.0:3000` and is proxied through nginx on ports 80/443.
 - Set `NODE_ENV=production` for optimized middleware behavior.
 - Use `PORT` and `HOST` environment variables to control binding.
-- Keep the app behind a firewall or reverse proxy if exposing it to the public internet.
 
-## VPS recommendations
+## Health Check
 
-- Use `pm2`, `systemd`, or a process manager to keep the app running.
-- Bind the app to `0.0.0.0` for external access.
-- Set `PORT` in the environment if needed.
-- Ensure the server has the dependencies needed for Puppeteer and headless Chrome.
-- `GET /robots.txt` and `GET /sitemap.xml` are available for search engine indexing.
-
-## Health check
-
-- `GET /healthz` returns `ok`
+```bash
+curl https://swiftener.com/healthz
+# returns: ok
+```
 
 ## Notes
 
 - Static assets are served with caching enabled.
 - `helmet` and `compression` are used for security and performance.
+- `GET /robots.txt` and `GET /sitemap.xml` are available for search engine indexing.
